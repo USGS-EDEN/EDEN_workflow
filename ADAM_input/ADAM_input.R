@@ -1,13 +1,22 @@
+# -------------
+# Bryan McCloskey
+# bmccloskey@usgs.gov
+# St. Petersburg Coastal and Marine Science Center
+# US Geological Survey
+#
+# 07/11/2018
+#--------------
+
+print("These libraries must be installed: RMySQL, RCurl, stringr")
 # Required libraries. If not present, run:
 # install.packages("RMySQL")
 # install.packages("RCurl")
 # install.packages("stringr")
-# install.packages("zoo") # For linear interpolation
 library(RMySQL)
 library(RCurl)
 library(stringr)
-library(zoo)
 
+dir <- paste0(getwd(), "/ADAM_input")
 # Connect to database, list of gages for which to acquire data
 source("./usr_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
@@ -27,7 +36,7 @@ report <- ""
 # Table of daily hourly values by agency
 tbl <- matrix(0, 3, 4)
 header <- "agency_cd\tsite_no\tdd_nu\tparameter_cd\tUVTYPE\tdate_tm\tTZCD\tVALUE\tPRECISION\tREMARK\tFLAGS\tQA"
-write(header, paste0(dir, "/data_uv_AQ.txt"))
+write(header, paste0(dir, "/output/data_uv_AQ.txt"))
 days <- c(Sys.Date() - 4, Sys.Date())
 # 15-minute and 6-minute timestamps
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -87,15 +96,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
         if (length(which(as.Date(usgs$datetime, format="%m/%d/%Y %H:%M:%S") == day4))) tbl[1, 4] <- tbl[1, 4] + 1
         for (j in 1:length(usgs_cnt)) if (length(which(tmp$datetime == range2[j])) == 1) usgs_cnt[j] <- usgs_cnt[j] + 1
         # Write USGS data out to file
-        write.table(usgs, paste0(dir, "/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
-        # Interpolate gaps
-        #inti <- data.frame(datetime = range2, site = usgs_gages$station_name_web[i])
-        #inti <- merge(inti, tmp[, c(3, 5)], all.x = T)
-        #names(inti)[3] <- "stage"
-        #inti$flag <- NA
-        #inti$flag[which(is.na(int$stage))] <- "G"
-        #inti$stage <- na.approx(int$stage, na.rm = F)
-        #int <- ifelse(is.null(int) == 0, inti, rbind(int, inti)) 
+        write.table(usgs, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
       }
     }
   }
@@ -154,8 +155,10 @@ for (j in 1:length(enp_cnt)) enp_cnt[j] <- length(which(enp$date_tm == range2[j]
 # Loop through expected ENP gages
 for (i in which(db$operating_agency_id == 1))
   # Write ENP data to file
-  if (length(enp$V3[enp$V2 == db$station_name[i]]))
-    write.table(data.frame("USNPS", db$usgs_nwis_id[i], str_pad(db$dd[i], 4), db$param[i], "da", enp$V3[enp$V2 == db$station_name[i]], "EST", as.numeric(enp$V5[enp$V2 == db$station_name[i]]) + db$conv[i], "9", "", "", "9"), paste0(dir, "/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  if (length(enp$V3[enp$V2 == db$station_name[i]])) {
+    df <- data.frame("USNPS", db$usgs_nwis_id[i], str_pad(db$dd[i], 4), db$param[i], "da", enp$V3[enp$V2 == db$station_name[i]], "EST", as.numeric(enp$V5[enp$V2 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
+    write.table(df, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  }
 
 # Initialize SFWMD data.frame
 sfwmd <- NULL
@@ -204,15 +207,17 @@ for (j in 1:length(sfwmd_cnt)) sfwmd_cnt[j] <- length(which(sfwmd$date_tm == ran
 # Loop through expected SFWMD gages
 for (i in which(db$operating_agency_id == 2 | db$operating_agency_id == 3))
   # Write SFWMD data to file
-  if(length(sfwmd$V3[sfwmd$V1 == db$station_name[i]]))
-    write.table(data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9"), paste0(dir, "/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  if(length(sfwmd$V3[sfwmd$V1 == db$station_name[i]])) {
+    df <- data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
+    write.table(df, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  }
 
 # Add table of daily gage counts to report
 tot <- sum(usgs_cnt[1:96], enp_cnt[1:96], sfwmd_cnt[1:96])
 report <- paste0(report, "\nApproximate gages by agency, each day:\nAgency\tDay 1\tDay 2\tDay 3\tDay 4\nUSGS\t", paste0(tbl[1, ], collapse = "\t"), "\nENP\t", paste0(tbl[2, ], collapse = "\t"), "\nSFWMD\t", paste0(tbl[3, ], collapse = "\t"), "\n\nTotal number of hourly values in data file: ", tot, "\n")
-write(tot, paste0(dir, "/hour_values_count.txt"))
+write(tot, paste0(dir, "/reports/hour_values_count.txt"))
 
-png(filename = paste0(dir, "/gage_count.png"), width = 862, height = 614, units = "px", pointsize = 12, type = "quartz")
+png(filename = paste0(dir, "/reports/gage_count.png"), width = 862, height = 614, units = "px", pointsize = 12, type = "quartz")
 plot(range2, usgs_cnt, type = "l", lwd = 3, ylim = range(usgs_cnt, enp_cnt, sfwmd_cnt, 0, na.rm = T), main = paste(as.Date(range2[length(range2)]),"ADAM input gage hourly values count"), xlab = "Date", ylab = "Gage values count")
 points(range2, usgs_cnt, pch = 16)
 lines(range2, enp_cnt, lwd = 3, col = "blue")
@@ -223,13 +228,13 @@ abline(v = range2[which(as.POSIXlt(range2)$hour == 0)], lty = "dashed")
 legend("bottomleft", c("USGS", "ENP", "SFWMD"), col = c("black", "blue", "red"), lwd = 3, pch = 16)
 dev.off()
 
-### System level commands may not work if local environment does not have curl, zip, or sendmail installed
-### May need to transfer/perform manually instead!!
-err <- try(system(paste0("curl -T ", dir, "/data_uv_AQ.txt ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt")), silent = T)
+err <- try(ftpUpload(paste0(dir, "/output/data_uv_AQ.txt"), "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
 report <- if (inherits(err, "try-error")) paste0(report, "\ndata_uv_AQ.txt file NOT transferred for ", days[2]) else paste0(report, "\ndata_uv_AQ.txt file transferred for ", days[2])
-zip("data_uv_AQ.txt.zip", "data_uv_AQ.txt")
-err <- try(system(paste0("curl -T ", dir, "/hour_values_count.txt ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt")), silent = T)
+zip(paste0(dir, "/output/data_uv_AQ.txt.zip"), paste0(dir, "/output/data_uv_AQ.txt"))
+err <- try(ftpUpload(paste0(dir, "/reports/hour_values_count.txt"), "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
+err <- try(write(report, paste0(dir, "/reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")), silent = T)
 
+### System level commands may not work if local environment does not have sendmail installed!!
+to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
 system(paste0("(echo 'Subject: data_uv_AQ.txt upload report
-", report, "';uuencode ", dir, "/data_uv_AQ.txt.zip data_uv_AQ.txt.zip;uuencode ", dir, "/gage_count.png gage_count.png) | /usr/sbin/sendmail bmccloskey@usgs.gov,mdpetkew@usgs.gov,matthews@usgs.gov,jmclark@usgs.gov,wbguimar@usgs.gov,dantolin@usgs.gov,bhuffman@usgs.gov"))
-err <- try(write(report, paste0(dir, "/report_", format(Sys.Date(), "%Y%m%d"), ".txt")), silent = T)
+", report, "';uuencode ", dir, "/output/data_uv_AQ.txt.zip data_uv_AQ.txt.zip;uuencode ", dir, "/reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))

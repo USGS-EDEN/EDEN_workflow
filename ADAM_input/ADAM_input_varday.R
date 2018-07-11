@@ -1,5 +1,15 @@
+# -------------
+# Bryan McCloskey
+# bmccloskey@usgs.gov
+# St. Petersburg Coastal and Marine Science Center
+# US Geological Survey
+#
+# 07/11/2018
+#--------------
+
 ### ALERT: This script depends on previously downloaded local ENP and SFWMD files! Does not download fresh copies!!
 
+print("These libraries must be installed: RMySQL, RCurl, stringr")
 # Required libraries. If not present, run:
 # install.packages("RMySQL")
 # install.packages("RCurl")
@@ -8,6 +18,7 @@ library(RMySQL)
 library(RCurl)
 library(stringr)
 
+dir <- paste0(getwd(), "/ADAM_input")
 # Connect to database, list of gages for which to acquire data
 source("./usr_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
@@ -29,7 +40,7 @@ for (d in num_days) {
   # Initialize email report
   report <- ""
   header <- "agency_cd\tsite_no\tdd_nu\tparameter_cd\tUVTYPE\tdate_tm\tTZCD\tVALUE\tPRECISION\tREMARK\tFLAGS\tQA"
-  write(header, paste0(dir, "/data_uv_AQ", d, ".txt"))
+  write(header, paste0(dir, "/output/data_uv_AQ", d, ".txt"))
   days <- seq(Sys.Date() - d, Sys.Date(), "days")
   # 15-minute and 6-minute timestamps
   start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S",tz="EST")
@@ -79,7 +90,7 @@ for (d in num_days) {
           # Build data.frame of USGS data
           usgs <- data.frame("USGS", tmp$site_no, usgs_gages$dd[i], usgs_gages$param[i], "da", datetime = format(tmp$datetime, "%m/%d/%Y %H:%M:%S"), "EST", tmp[, dd_col], 9, 9, 9, 9)
           # Write USGS data out to file
-          write.table(usgs[, 1:12], paste0(dir, "/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
+          write.table(usgs[, 1:12], paste0(dir, "/output/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
         }
       }
     }
@@ -124,7 +135,8 @@ for (d in num_days) {
     # Write ENP data to file
     if (length(enp$V3[enp$V2 == db$station_name[i]])) {
       report <- paste(report, "Gage", db$station_name[i], "values:", length(enp$V5[enp$V2 == db$station_name[i]]), "\n")
-      write.table(data.frame("USNPS", db$usgs_nwis_id[i], str_pad(db$dd[i], 4), db$param[i], "da", enp$V3[enp$V2 == db$station_name[i]], "EST", as.numeric(enp$V5[enp$V2 == db$station_name[i]]) + db$conv[i], "9", "", "", "9"), paste0(dir, "/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
+      df <- data.frame("USNPS", db$usgs_nwis_id[i], str_pad(db$dd[i], 4), db$param[i], "da", enp$V3[enp$V2 == db$station_name[i]], "EST", as.numeric(enp$V5[enp$V2 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
+      write.table(df, paste0(dir, "/output/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
     }
   
   report <- paste0(report, "SFWMD input files used:\n", paste(sfwmd_files, collapse = ", \n"), "\n")
@@ -160,19 +172,20 @@ for (d in num_days) {
     # Write SFWMD data to file
     if (length(sfwmd$V3[sfwmd$V1 == db$station_name[i]])) {
       report <- paste(report, "Gage", db$station_name[i], "values:", length(sfwmd$V5[sfwmd$V1 == db$station_name[i]]), "\n")
-      write.table(data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9"), paste0(dir, "/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
+      df <- data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
+      write.table(df, paste0(dir, "/output/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
     }
 
-  ### System level commands may not work if local environment does not have curl, zip, or sendmail installed
-  ### May need to transfer/perform manually instead!!
-  err <- try(system(paste0("curl -T ", dir, "/data_uv_AQ", d, ".txt ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ", d, ".txt")))
+  err <- try(ftpUpload(paste0(dir, "/output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ", d, ".txt")))
   if (inherits(err,"try-error")) report <- paste0(report, "\ndata_uv_AQ", d, ".txt file NOT transferred to /private/nonvisible/er") else report <- paste0(report, "\ndata_uv_AQ", d, ".txt file transferred to /private/nonvisible/er")
 
-  err <- try(system(paste0("curl -T ", dir, "/data_uv_AQ", d, ".txt ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/data_uv_AQ", d, ".txt")))
+  err <- try(ftpUpload(paste0(dir, "/output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/data_uv_AQ", d, ".txt")))
   if (inherits(err,"try-error")) report <- paste0(report, "\ndata_uv_AQ", d, ".txt file NOT transferred to /pub/er/fl/st.petersburg/bmccloskey") else report <- paste0(report, "\ndata_uv_AQ", d, ".txt file transferred to /pub/er/fl/st.petersburg/bmccloskey")
-  zip(paste0("data_uv_AQ", d, ".txt.zip"), paste0("data_uv_AQ", d, ".txt"))
-
+  zip(paste0(dir, "/output/data_uv_AQ", d, ".txt.zip"), paste0(dir, "/output/data_uv_AQ", d, ".txt"))
+  err <- try(write(report, paste0(dir, "/reports/report_", format(Sys.Date(), "%Y%m%d"), "_", d, "days.txt")), silent = T)
+  
+  ### System level commands may not work if local environment does not have sendmail installed!!
+  to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
   system(paste0("echo 'Subject: data_uv-AQ-extended-", d, "day upload report\n
-  ", report, "' | /usr/sbin/sendmail bmccloskey@usgs.gov,mdpetkew@usgs.gov,matthews@usgs.gov,jmclark@usgs.gov,wbguimar@usgs.gov,bhuffman@usgs.gov"))
-  err <- try(write(report, paste0("report_data_uv_AQ", d, ".txt")), silent = T)
+  ", report, "' | /usr/sbin/sendmail ", to))
 }

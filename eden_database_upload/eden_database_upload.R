@@ -2,6 +2,7 @@
 # install.packages("RMySQL")
 library(RMySQL)
 
+dir <- paste0(getwd(), "/eden_database_upload")
 # Connect to database and download data file
 source("./admin_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
