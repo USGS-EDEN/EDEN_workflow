@@ -1,0 +1,28 @@
+# Required libraries. If not present, run:
+# install.packages("ncdf4")
+library(ncdf4)
+
+### Set to containing directory of script!
+setwd("~/Desktop/EDEN_workflow/depth_header")
+dir <- getwd()
+
+wl_file <- list.files(paste0(dir, "/wl"))
+depth_file <- list.files(dir, "d*_fixed.nc$")
+surf.nc <- nc_open(paste0(dir, "/wl/", wl_file), write = T)
+stage <- ncvar_get(surf.nc, "stage")
+max <- max(stage, na.rm = T)
+min <- min(stage, na.rm = T)
+ncatt_put(surf.nc, "transverse_mercator", "semi_major_axis", 6378137)
+ncatt_put(surf.nc, "transverse_mercator", "inverse_flattening", 298.257222101, "double")
+ncatt_put(surf.nc, "stage", "min", min, "double")
+ncatt_put(surf.nc, "stage", "max", max, "double")
+nc_close(surf.nc)
+surf.nc <- nc_open(paste0(dir, "/", depth_file), write = T)
+depth <- ncvar_get(surf.nc, "depth")
+max <- max(depth, na.rm = T)
+min <- min(depth, na.rm = T)
+ncatt_put(surf.nc, "transverse_mercator", "semi_major_axis", 6378137)
+ncatt_put(surf.nc, "transverse_mercator", "inverse_flattening", 298.257222101, "double")
+ncatt_put(surf.nc, "depth", "min", min, "double")
+ncatt_put(surf.nc, "depth", "max", max, "double")
+nc_close(surf.nc)
