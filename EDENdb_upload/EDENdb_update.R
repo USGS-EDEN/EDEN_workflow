@@ -12,38 +12,30 @@ print("These libraries must be installed: RMySQL")
 # install.packages("RMySQL")
 library (RMySQL)
 
-try (setwd("./eden_database_backup_restore"), silent = T)
+try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")
-# Connect to database
+# Connect to database and download data file
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+# This will work for local non-ADAM-format files
+data_file <- "input.csv"
+file_columns <- c("character", "character", "numeric", "character")
+err <- try (z <- read.csv(data_file, colClasses = file_columns))
+names(z) <- c("site", "date_tm", "value", "flag")
 
-start_date <- "20180101" # dates must be YYYYMMDD
-end_date <- "20180331"
-backup_file <- paste0("EDENdb_backup_", start_date, "_", end_date, ".csv")
-
-# Create backup
-query <- paste0("select * from stage where datetime >= ", start_date, "000000 and datetime <= ", end_date, "230000 order by datetime")
-data <- dbGetQuery(con, query)
-cols <- (dim(data)[2] - 1) / 2
-write.csv(data, backup_file, quote = F, row.names = F)
-
-# Load backup
-file_columns <- c("character", rep(c("numeric", "character"), cols))
-err <- try (z <- read.csv(backup_file, colClasses = file_columns, check.names = F))
-
-# Convert to time object
-z$datetime <- as.POSIXct(z$datetime, tz = "EST", format = "%Y-%m-%d %H:%M:%S")
+# Format timestamps
+z$date_tm <- as.POSIXct(z$date_tm, tz = "EST", format = "%m/%d/%Y %H:%M")
+# Timestamp range present in file:
+first <- sort(unique(z$date_tm))[1]
+last <- rev(sort(unique(z$date_tm)))[1]
+range <- seq.POSIXt(first, last, "hour")
+# Remove non-hourly
+z <- z[z$date_tm %in% range, ]
 
 # Upload matrix to EDENdb
-for (i in 1:dim(z)[1]) { # Loop through rows
-  query <- "update stage set "
-  for (j in 2:dim(z)[2]) { # Loop through columns
-    # Quote both flags and numbers, not null
-    if (is.na(z[i, j])) tmp <- "NULL" else tmp <- paste0("'", z[i, j], "'")
-    query <- paste0(query, "`", names(z)[j], "` = ", tmp, ", ")
-  }
-  # Remove trailing comma
-  query <- paste0(substr(query, 1, nchar(query) - 2), " where datetime = '", z$datetime[i], "'")
+for (i in 1:dim(z)[1]) {
+  query <- paste0("update stage set `stage_", z$site[i], "` = ", z$value[i], ", `flag_", z$site[i], "` = ")
+  if (is.na(z$flag[i])) tmp <- "NULL" else tmp <- paste0("'", z$flag[i], "'")
+  query <- paste0(query, tmp, " where datetime = '", z$date_tm[i], "'")
   # Upload timestamp row to database
   err <- try (dbSendQuery(con, query))
 }
@@ -55,8 +47,8 @@ gages$dry_elevation[which(is.na(gages$dry_elevation))] <- -9999
 for (j in 1:length(gages$station_name_web))
   gages$hindcast[j] <- dbGetQuery(con, paste0("select min(datetime) from stage where `stage_", gages$station_name_web[j], "` is not null and `flag_", gages$station_name_web[j], "` is null"))
 # Calculate range of date coverage
-start <- as.Date(sort(unique(z$datetime))[1], tz = "EST")
-end <- as.Date(rev(sort(unique(z$datetime)))[1], tz = "EST")
+start <- as.Date(range[1], tz = "EST")
+end <- as.Date(rev(range)[1], tz = "EST")
 range <- seq.Date(start, end, by = "day")
 for (i in length(range):1) {
   dbDisconnect(con)

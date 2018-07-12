@@ -14,7 +14,7 @@ print("These libraries must be installed: RMySQL, RCurl")
 library (RMySQL)
 library (RCurl)
 
-try (setwd("./eden_database_upload"), silent = T)
+try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database and download data file
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
@@ -109,7 +109,7 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
   	# Remove trailing comma
   	query <- substr(query, 1, nchar(query) - 2)
   	# Upload timestamp row to database
-  	err <- try (dbSendQuery(con, query), T)
+  	err <- try (dbSendQuery(con, query))
   	if (inherits(err, "try-error")) report <- paste0(report, "\nEDENdb upload error for ", v$datetime[i], ": ", err)
   }
 } # End process and upload
