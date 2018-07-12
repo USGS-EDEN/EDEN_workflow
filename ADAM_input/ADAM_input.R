@@ -16,9 +16,9 @@ library(RMySQL)
 library(RCurl)
 library(stringr)
 
-dir <- paste0(getwd(), "/ADAM_input")
+try(setwd("./ADAM_input"))
+source("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
-source("./usr_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
 db <- dbGetQuery(con, "select station_name, operating_agency_id, usgs_nwis_id, dd, param, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
 
@@ -36,14 +36,14 @@ report <- ""
 # Table of daily hourly values by agency
 tbl <- matrix(0, 3, 4)
 header <- "agency_cd\tsite_no\tdd_nu\tparameter_cd\tUVTYPE\tdate_tm\tTZCD\tVALUE\tPRECISION\tREMARK\tFLAGS\tQA"
-write(header, paste0(dir, "/output/data_uv_AQ.txt"))
+write(header, "./output/data_uv_AQ.txt")
 days <- c(Sys.Date() - 4, Sys.Date())
 # 15-minute and 6-minute timestamps
-start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
-end <- strptime(paste(days[2], "07:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
-range <- seq.POSIXt(start, end, by = "15 min")
-range <- sort(unique(c(range, seq.POSIXt(start, end, by = "6 min"))))
-range2 <- seq.POSIXt(start, end, by = "1 hour")
+start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", "EST")
+end <- strptime(paste(days[2], "07:00:00"), "%Y-%m-%d %H:%M:%S", "EST")
+range <- seq.POSIXt(start, end, "15 min")
+range <- sort(unique(c(range, seq.POSIXt(start, end, "6 min"))))
+range2 <- seq.POSIXt(start, end, "1 hour")
 # Yesterday's noon timestamp
 noon <- which(as.POSIXlt(range)$yday == as.POSIXlt(Sys.Date())$yday - 1 & as.POSIXlt(range)$hour == 12 & as.POSIXlt(range)$min == 0)
 day1 <- as.Date(Sys.Date()) - 4
@@ -62,7 +62,7 @@ usgs_gages <- rbind(usgs_gages, c("Shark_River_Acoustic", "252230081021300", 9, 
 for (i in 1:length(usgs_gages$station_name_web)) {
   # Generate AQUARIUS URLs; add 1 for DST end timestamps
   url <- paste0("https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=", usgs_gages$usgs_nwis_id[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=", usgs_gages$param[i], "&access=3")
-  tmp <- try(read.table(url, header = T, sep = "\t", colClasses = "character"), silent = T)
+  tmp <- try(read.table(url, header = T, sep = "\t", colClasses = "character"))
   if (inherits(tmp, "try-error")) {
     report <- paste0(report, "USGS data _NOT_ downloaded for ", usgs_gages$station_name_web[i], "\n")
   } else {
@@ -75,14 +75,14 @@ for (i in 1:length(usgs_gages$station_name_web)) {
       report <- paste0(report, "Gage ", usgs_gages$station_name_web[i], " missing TS ID\n")
     } else {
       # Convert timestamps; shift DST
-      tmp$datetime <- as.POSIXct(tmp$datetime, tz = "EST", format = "%Y-%m-%d %H:%M")
-      tmp$datetime <- as.POSIXct(ifelse(tmp$tz_cd == "EDT", tmp$datetime - 3600, tmp$datetime), tz = "EST", origin = "1970-01-01")
+      tmp$datetime <- as.POSIXct(tmp$datetime, "EST", format = "%Y-%m-%d %H:%M")
+      tmp$datetime <- as.POSIXct(ifelse(tmp$tz_cd == "EDT", tmp$datetime - 3600, tmp$datetime), "EST", origin = "1970-01-01")
       tmp <- tmp[tmp$datetime %in% range, ]
       # Remove rows with "_Eqp" or "_Dry" flags
       if (any(grepl("_Eqp|_Dry|_Fld", tmp[, dd_col])))
         tmp <- tmp[-which(grepl("_Eqp|_Dry|_Fld", tmp[, dd_col])), ]
       # URLs with no returned data
-      if (dim(tmp)[1] == 0 || tmp[, 1] == "") {
+      if (dim(tmp)[1] == 0 | tmp[, 1] == "") {
         report <- paste0(report, "Gage ", usgs_gages$station_name_web[i], " missing\n")
       } else {
         # Check presence of yesterday's noon timestamp; add to count
@@ -96,7 +96,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
         if (length(which(as.Date(usgs$datetime, format="%m/%d/%Y %H:%M:%S") == day4))) tbl[1, 4] <- tbl[1, 4] + 1
         for (j in 1:length(usgs_cnt)) if (length(which(tmp$datetime == range2[j])) == 1) usgs_cnt[j] <- usgs_cnt[j] + 1
         # Write USGS data out to file
-        write.table(usgs, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+        write.table(usgs, "./output/data_uv_AQ.txt", sep = "\t", quote = F, row.names = F, col.names = F, append = T)
       }
     }
   }
@@ -109,17 +109,17 @@ enp <- NULL
 # Loop through days
 for (i in 4:0) {
   enp_file <- NULL
-  # enp_file <- list.files(paste0(dir, "/enp"), paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]")) #for local files
+  # enp_file <- list.files("./enp", paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]")) #for local files
   # Find today's ENP file name
-  err2 <- try(enp_file <- tail(strsplit(grep(paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/enp/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1), silent = T)
+  err2 <- try(enp_file <- tail(strsplit(grep(paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/enp/"), "\r*\n")[[1]], value = T), " ")[[1]], n = 1))
   # Download today's ENP file
-  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0(dir, "/enp/", enp_file)), silent = T)
-  if (inherits(err, "try-error") | inherits(err2, "try-error") | !file.exists(paste0(dir, "/enp/", enp_file)) | !file.info(paste0(dir, "/enp/", enp_file))$size) {
+  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)))
+  if (inherits(err, "try-error") | inherits(err2, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
     report <- paste0(report, "ENP input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
   } else {
     report <- paste0(report, "ENP file downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     # Read in ENP data
-    enp_tmp <- read.table(paste0(dir, "/enp/", enp_file), colClasses=c("NULL", rep("character", 3)))
+    enp_tmp <- read.table(paste0("./enp/", enp_file), colClasses = c("NULL", rep("character", 3)))
     # Create timestamp
     enp_tmp$V3 <- paste0(substr(enp_tmp$V3, 5, 6), "/", substr(enp_tmp$V3, 7, 8), "/", substr(enp_tmp$V3, 1, 4), " ", substr(enp_tmp$V4, 3, 4), ":", substr(enp_tmp$V4, 5, 6), ":00")
     # Extract data values
@@ -138,7 +138,7 @@ for (i in 4:0) {
     # Merge dates together; keep most recent values
     if (is.null(enp)) enp <- enp_tmp else {
       enp <- merge(enp, enp_tmp, by = c("V2", "V3", "V4", "date_tm"), all = T)
-      enp$V5.x[is.na(enp$V5.x) | (!is.na(enp$V5.y) & enp$V5.x != enp$V5.y)]<-enp$V5.y[is.na(enp$V5.x) | (!is.na(enp$V5.y) & enp$V5.x != enp$V5.y)]
+      enp$V5.x[is.na(enp$V5.x) | (!is.na(enp$V5.y) & enp$V5.x != enp$V5.y)] <- enp$V5.y[is.na(enp$V5.x) | (!is.na(enp$V5.y) & enp$V5.x != enp$V5.y)]
       enp <- enp[, 1:5]
       names(enp)[5] <- "V5"
     }
@@ -157,7 +157,7 @@ for (i in which(db$operating_agency_id == 1))
   # Write ENP data to file
   if (length(enp$V3[enp$V2 == db$station_name[i]])) {
     df <- data.frame("USNPS", db$usgs_nwis_id[i], str_pad(db$dd[i], 4), db$param[i], "da", enp$V3[enp$V2 == db$station_name[i]], "EST", as.numeric(enp$V5[enp$V2 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
-    write.table(df, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+    write.table(df, "./output/data_uv_AQ.txt", sep = "\t", quote = F, row.names = F, col.names = F, append = T)
   }
 
 # Initialize SFWMD data.frame
@@ -165,17 +165,17 @@ sfwmd <- NULL
 # Loop through days
 for (i in 4:0) {
   sfwmd_file <- NULL
-  # sfwmd_file <- list.files(paste0(dir, "/sfwmd"), paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")) #for local files
+  # sfwmd_file <- list.files("./sfwmd", paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")) #for local files
   # Find today's SFWMD file name
-  err2 <- try(sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1), silent = T)
+  err2 <- try(sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
   # Download today's SFWMD file
-  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0(dir, "/sfwmd/", sfwmd_file)), silent = T)
-  if (inherits(err, "try-error") | inherits(err2, "try-error") | is.null(sfwmd_file) | !file.exists(paste0(dir, "/sfwmd/", sfwmd_file)) | !file.info(paste0(dir, "/sfwmd/", sfwmd_file))$size) {
+  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)))
+  if (inherits(err, "try-error") | inherits(err2, "try-error") | is.null(sfwmd_file) | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
     report <- paste0(report, "SFWMD input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
   } else {
     report <- paste0(report, "SFWMD file downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     # Read in SFWMD data
-    sfwmd_tmp <- read.fwf(paste0(dir, "/sfwmd/", sfwmd_file), widths=c(11, 17, 13, 13, 10, 2), strip.white=T, colClasses=c(rep("character", 4), "numeric", "character"))
+    sfwmd_tmp <- read.fwf(paste0("./sfwmd/", sfwmd_file), widths = c(11, 17, 13, 13, 10, 2), strip.white = T, colClasses = c(rep("character", 4), "numeric", "character"))
     # Create timestamp
     sfwmd_tmp$V3 <- paste0(substr(sfwmd_tmp$V3, 5, 6), "/", substr(sfwmd_tmp$V3, 7, 8), "/", substr(sfwmd_tmp$V3, 1, 4), " ", substr(sfwmd_tmp$V3, 9, 10), ":", substr(sfwmd_tmp$V3, 11, 12), ":00")
     # Filter unwanted gages
@@ -190,7 +190,7 @@ for (i in 4:0) {
     # Merge dates together; keep most recent values
     if (is.null(sfwmd)) sfwmd <- sfwmd_tmp else {
       sfwmd <- merge(sfwmd, sfwmd_tmp, by = c("V1", "V2", "V3", "V4", "V6", "date_tm"), all = T)
-      sfwmd$V5.x[is.na(sfwmd$V5.x) | (!is.na(sfwmd$V5.y) & sfwmd$V5.x != sfwmd$V5.y)]<-sfwmd$V5.y[is.na(sfwmd$V5.x) | (!is.na(sfwmd$V5.y) & sfwmd$V5.x != sfwmd$V5.y)]
+      sfwmd$V5.x[is.na(sfwmd$V5.x) | (!is.na(sfwmd$V5.y) & sfwmd$V5.x != sfwmd$V5.y)] <- sfwmd$V5.y[is.na(sfwmd$V5.x) | (!is.na(sfwmd$V5.y) & sfwmd$V5.x != sfwmd$V5.y)]
       sfwmd <- sfwmd[, 1:7]
       names(sfwmd)[7] <- "V5"
     }
@@ -209,16 +209,16 @@ for (i in which(db$operating_agency_id == 2 | db$operating_agency_id == 3))
   # Write SFWMD data to file
   if(length(sfwmd$V3[sfwmd$V1 == db$station_name[i]])) {
     df <- data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
-    write.table(df, paste0(dir, "/output/data_uv_AQ.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T)
+    write.table(df, "./output/data_uv_AQ.txt", sep = "\t", quote = F, row.names = F, col.names = F, append = T)
   }
 
 # Add table of daily gage counts to report
 tot <- sum(usgs_cnt[1:96], enp_cnt[1:96], sfwmd_cnt[1:96])
 report <- paste0(report, "\nApproximate gages by agency, each day:\nAgency\tDay 1\tDay 2\tDay 3\tDay 4\nUSGS\t", paste0(tbl[1, ], collapse = "\t"), "\nENP\t", paste0(tbl[2, ], collapse = "\t"), "\nSFWMD\t", paste0(tbl[3, ], collapse = "\t"), "\n\nTotal number of hourly values in data file: ", tot, "\n")
-write(tot, paste0(dir, "/reports/hour_values_count.txt"))
+write(tot, "./reports/hour_values_count.txt")
 
-png(filename = paste0(dir, "/reports/gage_count.png"), width = 862, height = 614, units = "px", pointsize = 12, type = "quartz")
-plot(range2, usgs_cnt, type = "l", lwd = 3, ylim = range(usgs_cnt, enp_cnt, sfwmd_cnt, 0, na.rm = T), main = paste(as.Date(range2[length(range2)]),"ADAM input gage hourly values count"), xlab = "Date", ylab = "Gage values count")
+png("./reports/gage_count.png", 862, 614, type = "quartz")
+plot(range2, usgs_cnt, type = "l", lwd = 3, ylim = range(usgs_cnt, enp_cnt, sfwmd_cnt, 0, na.rm = T), main = paste(as.Date(range2[length(range2)]), "ADAM input gage hourly values count"), xlab = "Date", ylab = "Gage values count")
 points(range2, usgs_cnt, pch = 16)
 lines(range2, enp_cnt, lwd = 3, col = "blue")
 points(range2, enp_cnt, pch = 16, col = "blue")
@@ -228,13 +228,13 @@ abline(v = range2[which(as.POSIXlt(range2)$hour == 0)], lty = "dashed")
 legend("bottomleft", c("USGS", "ENP", "SFWMD"), col = c("black", "blue", "red"), lwd = 3, pch = 16)
 dev.off()
 
-err <- try(ftpUpload(paste0(dir, "/output/data_uv_AQ.txt"), "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
+err <- try(ftpUpload("./output/data_uv_AQ.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
 report <- if (inherits(err, "try-error")) paste0(report, "\ndata_uv_AQ.txt file NOT transferred for ", days[2]) else paste0(report, "\ndata_uv_AQ.txt file transferred for ", days[2])
-zip(paste0(dir, "/output/data_uv_AQ.txt.zip"), paste0(dir, "/output/data_uv_AQ.txt"))
-err <- try(ftpUpload(paste0(dir, "/reports/hour_values_count.txt"), "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
-err <- try(write(report, paste0(dir, "/reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")), silent = T)
+zip("./output/data_uv_AQ.txt.zip", "./output/data_uv_AQ.txt")
+err <- try(ftpUpload("./reports/hour_values_count.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
+err <- try(write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 
 ### System level commands may not work if local environment does not have sendmail installed!!
 to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
 system(paste0("(echo 'Subject: data_uv_AQ.txt upload report
-", report, "';uuencode ", dir, "/output/data_uv_AQ.txt.zip data_uv_AQ.txt.zip;uuencode ", dir, "/reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))
+", report, "';uuencode ", "./output/data_uv_AQ.txt.zip data_uv_AQ.txt.zip;uuencode ", "./reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))
