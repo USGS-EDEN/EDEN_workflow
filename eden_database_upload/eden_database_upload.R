@@ -1,12 +1,24 @@
-# Required library. If not present, run:
-# install.packages("RMySQL")
-library(RMySQL)
+# -------------
+# Bryan McCloskey
+# bmccloskey@usgs.gov
+# St. Petersburg Coastal and Marine Science Center
+# US Geological Survey
+#
+# 07/12/2018
+#--------------
 
-dir <- paste0(getwd(), "/eden_database_upload")
+print("These libraries must be installed: RMySQL, RCurl")
+# Required libraries. If not present, run:
+# install.packages("RMySQL")
+# install.packages("RCurl")
+library(RMySQL)
+library(RCurl)
+
+try(setwd("./eden_database_upload"), silent = T)
+source("../admin_pwd.R")
 # Connect to database and download data file
-source("./admin_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
-# This will work for local or FTP files, as needed
+# This will work for local or FTP ADAM-format files, as needed
 data_file <- "ftp://ftpint.usgs.gov/from_pub/er/ISOutput_Run.txt"
 file_columns <- c(rep("NULL", 3), "numeric", "character", "numeric", rep("NULL", 2), "numeric", rep("NULL", 9), "character", "character", "numeric", rep("NULL", 20), "character", rep("NULL", 4))
 err <- try(z <- read.csv(data_file, colClasses = file_columns))
@@ -17,15 +29,15 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
   # Remove unwanted gage
   z <- z[which(z$station_name_web != "Shark_River_Below_Gunboat_Island_Acoustic"), ]
   # Format timestamps
-  z$date_tm <- as.POSIXct(z$date_tm, tz="EST", format="%m/%d/%Y %H:%M:%S")
+  z$date_tm <- as.POSIXct(z$date_tm, tz = "EST", format = "%m/%d/%Y %H:%M:%S")
   # Timestamp range present in file:
   first <- sort(unique(z$date_tm))[1]
   last <- rev(sort(unique(z$date_tm)))[1]
-  range <- seq.POSIXt(first, last, by = "hour")
+  range <- seq.POSIXt(first, last, "hour")
   # Remove non-hourly
   z <- z[z$date_tm %in% range, ]
   # Retain all timestamps from within last four days
-  z <- z[which(as.Date(z$date_tm, tz="EST") >= as.Date(Sys.Date() - 4)), ]
+  z <- z[which(as.Date(z$date_tm, "EST") >= as.Date(Sys.Date() - 4)), ]
   # Timestamps present in file
   timestamp <- sort(unique(z$date_tm))
 
@@ -122,14 +134,14 @@ for (i in 1:length(unique(gages$agency))) {
 		query <- paste0(query, ", `stage_", gages$station_name_web[gages$agency == agency][j], "`")
 	query <- paste0(query, " from stage where datetime >= ", format(dt[1], "%Y%m%d010000"), " and datetime < ", format(dt[length(dt)] + 1, "%Y%m%d000001"), " order by datetime")
 	db <- dbGetQuery(con, query)
-	db$datetime <- as.POSIXct(db$datetime, tz="EST", format="%Y-%m-%d %H:%M:%S")
+	db$datetime <- as.POSIXct(db$datetime, tz = "EST", format = "%Y-%m-%d %H:%M:%S")
 	# Generate midnight value if missing
-  if (dim(db)[1] == 95 & as.POSIXlt(db$datetime[95])$hour==23) { db[96,] <- db[95,]; db$datetime[96] <- db$datetime[95] + 3600 }
+  if (dim(db)[1] == 95 & as.POSIXlt(db$datetime[95])$hour == 23) { db[96, ] <- db[95, ]; db$datetime[96] <- db$datetime[95] + 3600 }
 	# Report gages with missing values
 	report <- paste0(report, "\nSurfacing gages with M-flagged missing ", agency, " data points in EDENdb for date of interest (", dt[4] ,"): ")
 	# Loop by date, build files
 	for (j in 1:length(dt)) {
-		write.table(text, paste0(dir, "/", lagency, "/", lagency, "_", format(dt[j] + 1, "%Y%m%d")), quote=F, row.names=F, col.names=F)
+		write.table(text, paste0("./", lagency, "/", lagency, "_", format(dt[j] + 1, "%Y%m%d")), quote = F, row.names = F, col.names = F)
 	  # Matrix of values
 		mat <- matrix(nrow = 25, ncol = length(head))
 		colnames(mat) <- head
@@ -146,16 +158,15 @@ for (i in 1:length(unique(gages$agency))) {
 			tmp <- ifelse(is.na(tmp), "-123456E20", tmp)
 			mat[-1, k] <- if (length(mat[-1, k]) == length(tmp)) tmp else "-123456E20"
 			# Text file report of missing values
-			if (sum(tmp == "-123456E20") > 0) write.table(paste(head[k], sum(tmp == "-123456E20"), sep="\t"), paste0(dir, "/missing/", format(dt[j] + 1, "%Y%m%d"), ".txt"), quote=F, row.names=F, col.names=F, append=T)
+			if (sum(tmp == "-123456E20") > 0) write.table(paste(head[k], sum(tmp == "-123456E20"), sep = "\t"), paste0("./missing/", format(dt[j] + 1, "%Y%m%d"), ".txt"), quote = F, row.names = F, col.names = F, append = T)
 		}
 		# Write matrix to file
-		file <- paste0(dir, "/", lagency, "/", lagency, "_", format(dt[j] + 1, "%Y%m%d"))
-		err <- try(write.table(mat, file, sep="\t", quote=F, row.names=F, col.names=T, append=T), T)
+		f <- paste0(lagency, "_", format(dt[j] + 1, "%Y%m%d"))
+		file <- paste0("./", lagency, "/", f)
+		err <- try(write.table(mat, file, sep = "\t", quote = F, row.names = F, col.names = T, append = T), T)
 		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT generated for ", dt[j]) else paste0(report, "\n", agency, " daily median input file generated for ", dt[j])
 		# Transfer file to eFTP
-		### This may not work if local environment does not have curl installed
-		### May need to transfer manually instead!!
-		err <- try(system(paste("curl -T", file, "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/realtime_v2_test/")))
+		err <- try(ftpUpload(file, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/realtime_v2_test/", f)))
 		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT transferred for ", dt[j]) else paste0(report, "\n", agency, " daily median input file transferred for ", dt[j])
 	}
 }
@@ -167,32 +178,31 @@ for (j in 1:length(dt)) {
   # Counter of failed gages
   fail <- 0
   text <- "Agency	Station	X	Y	Daily Median Water Level (cm, NAVD88)	Date	Data Type"
-  write.table(text, paste0(dir, "/flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), quote=F, row.names=F, col.names=F, eol="\r\n")
+  write.table(text, paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), quote = F, row.names = F, col.names = F, eol = "\r\n")
   for(i in 1:length(gages$station_name_web)) {
     # Select gage data
 	  query <- paste0("select datetime, `stage_", gages$station_name_web[i], "`+", gages$conv[i], " as stage, `flag_", gages$station_name_web[i], "` as flag from stage where datetime >= ", format(dt[j], "%Y%m%d010000"), " and datetime < ", format(dt[j] + 1, "%Y%m%d000001"), " order by datetime")
 	  db <- dbGetQuery(con, query)
 	  # Calculate daily flags
-	  flag <- ifelse(length(which(db$flag == "M")) == 24, "M", ifelse(median(db$stage, na.rm=T) < gages$dry_elevation[i], "D", ifelse(length(which(is.na(db$flag))) > 0, "O", "E")))
+	  flag <- ifelse(length(which(db$flag == "M")) == 24, "M", ifelse(median(db$stage, na.rm = T) < gages$dry_elevation[i], "D", ifelse(length(which(is.na(db$flag))) > 0, "O", "E")))
 	  # Calculate medians, generate output text
 	  text <- c(gages$agency[i], gages$station_name_web[i], round(gages$utm_easting[i], 1), round(gages$utm_northing[i], 1), round(median(db$stage, na.rm=T) * 12 * 2.54), format(dt[j], "%Y%m%d"), flag)
-	  err <- try(write.table(t(text), paste0(dir, "/flag/", format(dt[j], "%Y%m%d"), "_median_flag.txt"), sep="\t", quote=F, row.names=F, col.names=F, append=T, eol="\r\n"))
+	  err <- try(write.table(t(text), paste0("./flag/", format(dt[j], "%Y%m%d"), "_median_flag.txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T, eol = "\r\n"))
 	  if (inherits(err, "try-error")) { report <- paste0(report, "\nAnnotated daily median file NOT generated for ", gages$station_name_web[i], " for ", dt[j]); fail <- fail + 1 }
   }
   if (fail == 0) report <- paste0(report, "\n\nAnnotated daily median file generated for ", dt[j])
   # Transfer file to eFTP
-  ### This may not work if local environment does not have curl installed
-  ### May need to transfer manually instead!!
-  err <- try(system(paste0("curl -T ", dir, "/flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/")))
+  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt")))
   report <- if (inherits(err, "try-error")) paste0(report, "\nAnnotated daily median file NOT transferred for ", dt[j]) else paste0(report, "\nAnnotated daily median file transferred for ", dt[j])
 }
+err <- try(write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 # Email report of data upload
-### This may not work if local environment does not have sendmail enabled
+### System level commands may not work if local environment does not have sendmail installed!!
+to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, jmclark@usgs.gov, matthews@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov, hhenkel@usgs.gov"
 system(paste0("echo 'Subject: EDENdb upload report
-", report, "' | /usr/sbin/sendmail bmccloskey@usgs.gov,mdpetkew@usgs.gov,jmclark@usgs.gov,matthews@usgs.gov,dantolin@usgs.gov,bhuffman@usgs.gov,hhenkel@usgs.gov"))
-err <- try(write(report, paste0(dir, "/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
+", report, "' | /usr/sbin/sendmail ", to))
 
-# Update daily stage values table with medians of haurly values
+# Update daily stage values table with medians of hourly values
 gages <- dbGetQuery(con, "select station_name_web, dry_elevation from station where display = 1 and station_name_web != 'Alligator_Creek' and station_name_web != 'East_Side_Creek' and station_name_web != 'G-3777' and station_name_web != 'Manatee_Bay_Creek' and station_name_web != 'Raulerson_Brothers_Canal' and station_name_web != 'Barron_River'")
 gages$dry_elevation[which(is.na(gages$dry_elevation))] <- -9999
 # Determine whether flags are estimated or hindcast
@@ -210,7 +220,8 @@ for (i in length(range):1) {
   for (j in 1:length(gages$station_name_web))
     query2 <- paste0(query2, ", `stage_", gages$station_name_web[j], "`, `flag_", gages$station_name_web[j], "`")
   query2 <- paste0(query2, " from stage where datetime >= ", format(range[i], "%Y%m%d000000"), " and datetime < ", format(range[i] + 1, "%Y%m%d000000"), " order by datetime")
-  db2 <- dbGetQuery(con, query2)
+  err <- try(db2 <- dbGetQuery(con, query2), silent = T)
+  if (inherits(err, "try-error")) next # RMySQL library has bug occasionally causing this query to fail
   # Determin whether to insert (new rows) or update (existing rows)
   date_check <- dbGetQuery(con, paste0("select count(date) as ct from stage_daily where date = '", range[i], "'"))
   in_up <- if (date_check$ct == 1) "update" else "insert into"

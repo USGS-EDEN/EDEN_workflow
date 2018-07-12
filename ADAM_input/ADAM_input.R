@@ -16,7 +16,7 @@ library(RMySQL)
 library(RCurl)
 library(stringr)
 
-try(setwd("./ADAM_input"))
+try(setwd("./ADAM_input"), silent = T)
 source("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
