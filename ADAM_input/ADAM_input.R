@@ -12,12 +12,12 @@ print("These libraries must be installed: RMySQL, RCurl, stringr")
 # install.packages("RMySQL")
 # install.packages("RCurl")
 # install.packages("stringr")
-library(RMySQL)
-library(RCurl)
-library(stringr)
+library (RMySQL)
+library (RCurl)
+library (stringr)
 
-try(setwd("./ADAM_input"), silent = T)
-source("../usr_pwd.R")
+try (setwd("./ADAM_input"), silent = T)
+source ("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
 db <- dbGetQuery(con, "select station_name, operating_agency_id, usgs_nwis_id, dd, param, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
@@ -62,7 +62,7 @@ usgs_gages <- rbind(usgs_gages, c("Shark_River_Acoustic", "252230081021300", 9, 
 for (i in 1:length(usgs_gages$station_name_web)) {
   # Generate AQUARIUS URLs; add 1 for DST end timestamps
   url <- paste0("https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=", usgs_gages$usgs_nwis_id[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=", usgs_gages$param[i], "&access=3")
-  tmp <- try(read.table(url, header = T, sep = "\t", colClasses = "character"))
+  tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
   if (inherits(tmp, "try-error")) {
     report <- paste0(report, "USGS data _NOT_ downloaded for ", usgs_gages$station_name_web[i], "\n")
   } else {
@@ -111,9 +111,9 @@ for (i in 4:0) {
   enp_file <- NULL
   # enp_file <- list.files("./enp", paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]")) #for local files
   # Find today's ENP file name
-  err2 <- try(enp_file <- tail(strsplit(grep(paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/enp/"), "\r*\n")[[1]], value = T), " ")[[1]], n = 1))
+  err2 <- try (enp_file <- tail(strsplit(grep(paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/enp/"), "\r*\n")[[1]], value = T), " ")[[1]], n = 1))
   # Download today's ENP file
-  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)))
+  err <- try (download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)))
   if (inherits(err, "try-error") | inherits(err2, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
     report <- paste0(report, "ENP input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
   } else {
@@ -167,9 +167,9 @@ for (i in 4:0) {
   sfwmd_file <- NULL
   # sfwmd_file <- list.files("./sfwmd", paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")) #for local files
   # Find today's SFWMD file name
-  err2 <- try(sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
+  err2 <- try (sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
   # Download today's SFWMD file
-  err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)))
+  err <- try (download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)))
   if (inherits(err, "try-error") | inherits(err2, "try-error") | is.null(sfwmd_file) | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
     report <- paste0(report, "SFWMD input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
   } else {
@@ -207,7 +207,7 @@ for (j in 1:length(sfwmd_cnt)) sfwmd_cnt[j] <- length(which(sfwmd$date_tm == ran
 # Loop through expected SFWMD gages
 for (i in which(db$operating_agency_id == 2 | db$operating_agency_id == 3))
   # Write SFWMD data to file
-  if(length(sfwmd$V3[sfwmd$V1 == db$station_name[i]])) {
+  if (length(sfwmd$V3[sfwmd$V1 == db$station_name[i]])) {
     df <- data.frame("FL005", db$usgs_nwis_id[i], paste0("   ", db$dd[i]), db$param[i], "da", sfwmd$V3[sfwmd$V1 == db$station_name[i]], "EST", as.numeric(sfwmd$V5[sfwmd$V1 == db$station_name[i]]) + db$conv[i], "9", "", "", "9")
     write.table(df, "./output/data_uv_AQ.txt", sep = "\t", quote = F, row.names = F, col.names = F, append = T)
   }
@@ -228,11 +228,11 @@ abline(v = range2[which(as.POSIXlt(range2)$hour == 0)], lty = "dashed")
 legend("bottomleft", c("USGS", "ENP", "SFWMD"), col = c("black", "blue", "red"), lwd = 3, pch = 16)
 dev.off()
 
-err <- try(ftpUpload("./output/data_uv_AQ.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
+err <- try (ftpUpload("./output/data_uv_AQ.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
 report <- if (inherits(err, "try-error")) paste0(report, "\ndata_uv_AQ.txt file NOT transferred for ", days[2]) else paste0(report, "\ndata_uv_AQ.txt file transferred for ", days[2])
 zip("./output/data_uv_AQ.txt.zip", "./output/data_uv_AQ.txt")
-err <- try(ftpUpload("./reports/hour_values_count.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
-err <- try(write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
+err <- try (ftpUpload("./reports/hour_values_count.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
+err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 
 ### System level commands may not work if local environment does not have sendmail installed!!
 to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"

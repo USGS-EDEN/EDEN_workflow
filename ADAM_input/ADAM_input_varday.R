@@ -14,12 +14,12 @@ print("These libraries must be installed: RMySQL, RCurl, stringr")
 # install.packages("RMySQL")
 # install.packages("RCurl")
 # install.packages("stringr")
-library(RMySQL)
-library(RCurl)
-library(stringr)
+library (RMySQL)
+library (RCurl)
+library (stringr)
 
-try(setwd("./ADAM_input"), silent = T)
-source("../usr_pwd.R")
+try (setwd("./ADAM_input"), silent = T)
+source ("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
 db <- dbGetQuery(con, "select station_name, operating_agency_id, usgs_nwis_id, dd, param, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
@@ -63,7 +63,7 @@ for (d in num_days) {
   for (i in 1:length(usgs_gages$station_name_web)) {
     # Generate AQUARIUS URLs; add 1 for DST end timestamps
     url <- paste0("https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=", usgs_gages$usgs_nwis_id[i], "&startDT=", days[1], "&endDT=", days[length(days)], "&parameterCd=", usgs_gages$param[i], "&access=3")
-    tmp <- try(read.table(url, header = T, sep = "\t", colClasses = "character"))
+    tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
     if (inherits(tmp, "try-error")) { 
       report <- paste0(report, "USGS data _NOT_ downloaded for ", usgs_gages$station_name_web[i], "\n") 
     } else {
@@ -80,8 +80,8 @@ for (d in num_days) {
         tmp$datetime <- as.POSIXct(ifelse(tmp$tz_cd == "EDT", tmp$datetime - 3600, tmp$datetime), "EST", origin = "1970-01-01")
         tmp <- tmp[tmp$datetime %in% range, ]
         # Remove rows with "_Eqp" or "_Dry" flags
-        if (any(apply(tmp, 1, function(x) any(grepl("_Eqp|_Dry|_Fld", x)))))
-          tmp <- tmp[-which(apply(tmp, 1, function(x) any(grepl("_Eqp|_Dry|_Fld", x)))), ]
+        if (any(apply(tmp, 1, function (x) any(grepl("_Eqp|_Dry|_Fld", x)))))
+          tmp <- tmp[-which(apply(tmp, 1, function (x) any(grepl("_Eqp|_Dry|_Fld", x)))), ]
         # URLs with no returned data
         if (dim(tmp)[1] == 0 || tmp[, 1] == "") {
           report <- paste(report, "Gage", usgs_gages$station_name_web[i], "missing\n") }
@@ -178,13 +178,13 @@ for (d in num_days) {
       write.table(df, paste0("./output/data_uv_AQ", d, ".txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T)
     }
 
-  err <- try(ftpUpload(paste0("./output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ", d, ".txt")))
+  err <- try (ftpUpload(paste0("./output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ", d, ".txt")))
   if (inherits(err,"try-error")) report <- paste0(report, "\ndata_uv_AQ", d, ".txt file NOT transferred to /private/nonvisible/er") else report <- paste0(report, "\ndata_uv_AQ", d, ".txt file transferred to /private/nonvisible/er")
 
-  err <- try(ftpUpload(paste0("./output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/data_uv_AQ", d, ".txt")))
+  err <- try (ftpUpload(paste0("./output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/data_uv_AQ", d, ".txt")))
   if (inherits(err,"try-error")) report <- paste0(report, "\ndata_uv_AQ", d, ".txt file NOT transferred to /pub/er/fl/st.petersburg/bmccloskey") else report <- paste0(report, "\ndata_uv_AQ", d, ".txt file transferred to /pub/er/fl/st.petersburg/bmccloskey")
   zip(paste0("./output/data_uv_AQ", d, ".txt.zip"), paste0("./output/data_uv_AQ", d, ".txt"))
-  err <- try(write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), "_", d, "days.txt")))
+  err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), "_", d, "days.txt")))
   
   ### System level commands may not work if local environment does not have sendmail installed!!
   to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
