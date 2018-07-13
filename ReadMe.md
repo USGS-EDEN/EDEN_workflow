@@ -8,5 +8,6 @@ EDEN Workflow is an attempt to reproduce the EDEN daily (and other) workflow, in
 - **EDENdb_upload:** Retrieve daily output from ADAM, process, load into EDENdb, create EDEN model input data, generate annotated daily median files, and update EDENdb daily values table.
 - **EDENdb_backup_restore:** Replace selcted EDENdb timestamps with backup .CSV data.
 - **netCDF_headers**: Modify the EDEN model output netCDF files' headers.
+- **CSSS_viewer**: Generate the CSSS webapp data, statistics, images, and report.
 - **duration_hydrographs** Produce gage and tree island ERTP duration hydrograph plots and data, prepare email, generate CSSS webapp data and plots.
 - **coastal_eden:** Download daily FL and SC/GA coastal data, calculate salinities and CSIs, populate database, generate plots, and transfer files.
