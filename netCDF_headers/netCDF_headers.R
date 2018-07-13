@@ -21,10 +21,11 @@ unlink("./surfaces/*.nc")
 # Calculate quarter for yesterday
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
 
+ftp_dir <- "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/"
 wl_file <- paste0(cur_qtr, ".nc")
 d_file <- paste0("d", cur_qtr, ".nc")
-err <- try (download.file(paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", wl_file), paste0("./surfaces/", wl_file)))
-err <- try (download.file(paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", d_file), paste0("./surfaces/", d_file)))
+err <- try (download.file(paste0(ftp_dir, wl_file), paste0("./surfaces/", wl_file)))
+err <- try (download.file(paste0(ftp_dir, d_file), paste0("./surfaces/", d_file)))
 
 d.nc <- nc_open(paste0("./surfaces/", d_file), write = T)
 ncvar_rename(d.nc, "stage", "depth")
@@ -51,5 +52,5 @@ ncatt_put(wl.nc, "stage", "min", min, "double")
 ncatt_put(wl.nc, "stage", "max", max, "double")
 nc_close(wl.nc)
 
-err <- try (ftpUpload(paste0("./surfaces/", wl_file), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", wl_file)))
-err <- try (ftpUpload(paste0("./surfaces/", d_file), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/d", cur_qtr, "_fixed.nc")))
+err <- try (ftpUpload(paste0("./surfaces/", wl_file), paste0(ftp_dir, wl_file)))
+err <- try (ftpUpload(paste0("./surfaces/", d_file), paste0(ftp_dir, "d", cur_qtr, "_fixed.nc")))
