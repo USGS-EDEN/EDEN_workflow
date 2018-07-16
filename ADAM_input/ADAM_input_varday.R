@@ -183,7 +183,7 @@ for (d in num_days) {
 
   err <- try (ftpUpload(paste0("./output/data_uv_AQ", d, ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/data_uv_AQ", d, ".txt")))
   if (inherits(err,"try-error")) report <- paste0(report, "\ndata_uv_AQ", d, ".txt file NOT transferred to /pub/er/fl/st.petersburg/bmccloskey") else report <- paste0(report, "\ndata_uv_AQ", d, ".txt file transferred to /pub/er/fl/st.petersburg/bmccloskey")
-  zip(paste0("./output/data_uv_AQ", d, ".txt.zip"), paste0("./output/data_uv_AQ", d, ".txt"))
+  zip(paste0("./output/data_uv_AQ", d, ".txt.zip"), paste0("./output/data_uv_AQ", d, ".txt"), "-j9X")
   err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), "_", d, "days.txt")))
   
   ### System level commands may not work if local environment does not have sendmail installed!!

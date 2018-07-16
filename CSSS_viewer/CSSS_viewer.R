@@ -125,7 +125,7 @@ write(js, "./output/por_stats.js")
 err <- try (ftpUpload("./output/por_stats.js", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/por_stats.js"))
 
 err <- try (download.file("https://sofia.usgs.gov/eden/csss/CSSS_subarea_stats.csv.zip", "./output/CSSS_subarea_stats.csv.zip"))
-unzip("./output/CSSS_subarea_stats.csv.zip")
+unzip("./output/CSSS_subarea_stats.csv.zip", exdir = "./output/")
 js2 <- read.csv("./output/CSSS_subarea_stats.csv", colClasses = "character")
 js2 <- js2[1:(which(as.Date(js2$Date, "%m/%d/%Y") == df$date[90]) - 1), ]
 df$date <- format(df$date, "%m/%d/%Y")
@@ -133,7 +133,7 @@ for (i in 90:dim(df)[1])
   js2[dim(js2)[1] + 1, ] <- df[i, ]
 cols <- c("Date", rbind(paste("area", sub, "% dry"), paste("area", sub, "% WD <= 17cm"), paste("area", sub, "% dry >= 40 days"), paste("area", sub, "% dry >= 90 days"), paste("mean cm water depth area", sub), paste("water depth standard deviation cm area", sub)))
 write.table(js2, "./output/CSSS_subarea_stats.csv", quote = F, sep = ",", row.names = F, col.names = cols)
-zip("./output/CSSS_subarea_stats.csv.zip", "./output/CSSS_subarea_stats.csv")
+zip("./output/CSSS_subarea_stats.csv.zip", "./output/CSSS_subarea_stats.csv", "-j9X")
 err <- try (ftpUpload("./output/CSSS_subarea_stats.csv.zip", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/CSSS_subarea_stats.csv.zip"))
 
 # Generate recent depth graphs
@@ -221,6 +221,8 @@ time <- ncvar_get(s.nc, "time")
 time <- as.POSIXct(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + 86400 * time
 nc_close(s.nc)
 d <- sweep(s, c(1, 2), dem, "-")
+if (!dir.exists(paste0("./images/", format(time[i],'%Y')))) dir.create(paste0("./images/", format(time[i],'%Y')))
+if (!dir.exists(paste0("./images/", format(time[i],'%Y'), "_nest/"))) dir.create(paste0("./images/", format(time[i],'%Y'), "_nest/"))
 for (i in 1:length(time)) {
   f <- paste0(sprintf("trans%04d", as.POSIXlt(time[i])$yday), ".png")
   png(paste0("./images/", format(time[i], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")

@@ -230,7 +230,7 @@ dev.off()
 
 err <- try (ftpUpload("./output/data_uv_AQ.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/data_uv_AQ.txt"))
 report <- if (inherits(err, "try-error")) paste0(report, "\ndata_uv_AQ.txt file NOT transferred for ", days[2]) else paste0(report, "\ndata_uv_AQ.txt file transferred for ", days[2])
-zip("./output/data_uv_AQ.txt.zip", "./output/data_uv_AQ.txt")
+zip("./output/data_uv_AQ.txt.zip", "./output/data_uv_AQ.txt", "-j9X")
 err <- try (ftpUpload("./reports/hour_values_count.txt", "ftp://ftpint.usgs.gov/private/nonvisible/er/hour_values_count.txt"))
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 
