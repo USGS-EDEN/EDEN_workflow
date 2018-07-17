@@ -142,8 +142,8 @@ cols <- which(names(js2) %in% paste0("mean.cm.water.depth.area.", c("A", "AX", "
 yr <- as.Date(format(Sys.Date(), "%Y-01-01")) - 1
 yr <- c(as.Date(format(yr, "%Y-01-01")), yr)
 doy <- as.POSIXlt(Sys.Date() - 1)$yday
-w_yr <- if (doy < 305) format(yr, "%Y") else as.numeric(format(yr, "%Y")) + 1
-d_yr <- if (doy < 121) as.numeric(format(yr, "%Y")) else format(yr, "%Y")
+w_yr <- if (doy < 305) format(yr[1], "%Y") else as.numeric(format(yr[1], "%Y")) + 1
+d_yr <- if (doy < 121) as.numeric(format(yr[1], "%Y")) else format(yr[1], "%Y")
 wet <- c(as.Date(paste0(w_yr, "-05-01")), as.Date(paste0(w_yr, "-10-31")))
 dry <- c(as.Date(paste0(d_yr, "-11-01")), as.Date(paste0(as.numeric(d_yr) + 1, "-04-30")))
 mon <- as.Date(format(Sys.Date(), "%Y-%m-01")) - 1

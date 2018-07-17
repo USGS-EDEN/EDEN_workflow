@@ -20,7 +20,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", hos
 data_file <- "input.csv"
 file_columns <- c("character", "character", "numeric", "character")
 err <- try (z <- read.csv(data_file, colClasses = file_columns))
-names(z) <- c("site", "date_tm", "value", "flag")
+names(z) <- c("date_tm", "site", "value", "flag")
 
 # Format timestamps
 z$date_tm <- as.POSIXct(z$date_tm, tz = "EST", format = "%m/%d/%Y %H:%M")
@@ -30,6 +30,7 @@ last <- rev(sort(unique(z$date_tm)))[1]
 range <- seq.POSIXt(first, last, "hour")
 # Remove non-hourly
 z <- z[z$date_tm %in% range, ]
+z$flag[z$flag == "NULL"] <- NA
 
 # Upload matrix to EDENdb
 for (i in 1:dim(z)[1]) {
