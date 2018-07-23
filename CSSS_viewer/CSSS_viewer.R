@@ -125,7 +125,7 @@ write(js, "./output/por_stats.js")
 err <- try (ftpUpload("./output/por_stats.js", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/por_stats.js"))
 
 err <- try (download.file("https://sofia.usgs.gov/eden/csss/CSSS_subarea_stats.csv.zip", "./output/CSSS_subarea_stats.csv.zip"))
-unzip("./output/CSSS_subarea_stats.csv.zip", exdir = "./output/")
+unzip("./output/CSSS_subarea_stats.csv.zip", exdir = "./output/", junkpaths = T)
 js2 <- read.csv("./output/CSSS_subarea_stats.csv", colClasses = "character")
 js2 <- js2[1:(which(as.Date(js2$Date, "%m/%d/%Y") == df$date[90]) - 1), ]
 df$date <- format(df$date, "%m/%d/%Y")
