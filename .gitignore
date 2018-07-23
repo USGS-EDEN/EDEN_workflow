@@ -44,6 +44,10 @@
 !*/csi/.gitkeep
 */duration_hydrographs/*
 !*/duration_hydrographs/.gitkeep
+*/et/*
+!*/et/.gitkeep
+*/rainfall/*
+!*/rainfall/.gitkeep
 data_uv*
 admin_pwd.R
 usr_pwd.R
