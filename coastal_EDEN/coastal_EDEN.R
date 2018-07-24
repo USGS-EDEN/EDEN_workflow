@@ -10,7 +10,7 @@
 print("These libraries must be installed: RMySQL, RCurl, CSI")
 # Required libraries. If not present, run:
 # install.packages("RMySQL")
-# install.packages("RCurl)
+# install.packages("RCurl")
 # devtools::install_github("USGS-EDEN/CSI")
 library (RMySQL)
 library (RCurl)
@@ -72,14 +72,12 @@ for (i in 1:length(params$column)) {
 # Upload data.frame to CoastalEDENdb
 for (i in 1:dim(v)[1]) {
   ### Caution! 'replace' erases non-specified columns!! Use 'update' if modifying subsets of columns
-  query <- paste0("replace into coastal set datetime = '", v$datetime[i], "', ")
+  query <- paste0("replace into coastal set datetime = '", v$datetime[i], "'")
   for (j in 2:dim(v)[2]) {
     # Quote both flags and numbers, not null
     if (is.na(v[i, j])) tmp <- "NULL" else tmp <- paste0("'", v[i, j], "'")
-    query <- paste0(query, "`", names(v)[j], "` = ", tmp, ", ")
+    query <- paste0(query, ", `", names(v)[j], "` = ", tmp)
   }
-  # Remove trailing comma
-  query <- substr(query, 1, nchar(query) - 2)
   # Upload timestamp row to database
   err <- try(dbSendQuery(con, query), T)
   if (inherits(err, "try-error")) report <- paste0(report, "\nCoastalEDENdb upload error for ", v$datetime[i], ": ", err)

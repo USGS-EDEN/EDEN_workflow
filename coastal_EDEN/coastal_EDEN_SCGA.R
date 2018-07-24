@@ -1,19 +1,26 @@
+# -------------
+# Bryan McCloskey
+# bmccloskey@usgs.gov
+# St. Petersburg Coastal and Marine Science Center
+# US Geological Survey
+#
+# 07/16/2018
+#--------------
+
+print("These libraries must be installed: RMySQL, RCurl, CSI")
 # Required libraries. If not present, run:
 # install.packages("RMySQL")
-# devtools::install_github("bmccloskey/CSI")
+# install.packages("RCurl")
+# devtools::install_github("USGS-EDEN/CSI")
 library (RMySQL)
+library (RCurl)
 library (CSI)
 
-### Set to containing directory of script!
-setwd("~/Desktop/coastal_eden_git")
-dir <- getwd()
-
+try (setwd("./coastal_EDEN"), silent = T)
+source ("../admin_pwd.R")
 # Connect to database, list of gages for which to acquire data
-usr = "eve_write"
-pword = "!eV3_r0ck5!"
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
-
-gages <- read.csv(paste0(dir, "/SC_GA_salinity_gages.csv"), colClasses = c("character", "character", "character", "numeric", "numeric"))
+gages <- read.csv("./SCGA_salinity_gages.csv", colClasses = c("character", "character", "character", "numeric", "numeric"))
 days <- c(Sys.Date() - 14, Sys.Date() - 1)
 range <- seq.Date(days[1], days[2], "day")
 v <- data.frame(datetime = range)
@@ -24,7 +31,7 @@ for (i in 1:length(gages$station_name_web)) {
   print(gages$station_name_web[i])
   # Generate AQUARIUS URLs; add 1 for DST end timestamps
   url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$NWIS_ID[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=00095&statCd=00003&access=3")
-  tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"), silent = T)
+  tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
   if (inherits(tmp, "try-error")) {
     report <- paste0(report, "Data _NOT_ downloaded for ", gages$station_name_web[i], "\n")
   } else {
@@ -61,13 +68,11 @@ v[, 2:dim(v)[2]] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 
 # Upload data.frame to CoastalEDENdb
 for (i in 1:dim(v)[1]) {
   ### Caution! 'replace' erases non-specified columns!! Use 'update' if modifying subsets of columns
-  query <- paste0("replace into coastal_sc_ga set date='", v$datetime[i], "', ")
+  query <- paste0("replace into coastal_sc_ga set date='", v$datetime[i], "'")
   for (j in 2:dim(v)[2]) {
     if (is.na(v[i, j])) tmp <- "NULL" else tmp <- v[i, j]
-    query <- paste0(query, names(v)[j], "_salinity = ", tmp, ", ")
+    query <- paste0(query, ", ", names(v)[j], "_salinity = ", tmp)
   }
-  # Remove trailing comma
-  query <- substr(query, 1, nchar(query) - 2)
   # Upload timestamp row to database
   err <- try(dbSendQuery(con, query), T)
   if (inherits(err, "try-error")) report <- paste0(report, "\nCoastalEDENdb upload error for ", v$datetime[i], ": ", err)
@@ -80,7 +85,7 @@ for (i in 1:dim(gages)[1]) {
   last_meas <- rev(which(!is.na(db2$sal)))[1]
   db3 <- data.frame(date = db2$date, sal = NA)
   for (j in 7:last_meas) db3$sal[j] <- mean(db2$sal[(j - 6):j], na.rm = T)
-  jpeg(filename = paste0(dir, "/images_sc_ga/", gages$station_name_web[i], "_thumb.jpg"), width = 360, height = 150, units = "px", pointsize = 2, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./images/", gages$station_name_web[i], "_thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
   par(mar = c(0, 0, 0, 0) + .1)
   plot(db2$date, db2$sal, type = "n", xlab = "", ylab = "", ylim = range(db2$sal, na.rm = T), xaxt = "n", xaxt = "n", main = "")
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
@@ -90,7 +95,7 @@ for (i in 1:dim(gages)[1]) {
   lines(db3$date, db3$sal, lwd = 2, col = "green")
   points(db3$date[last_meas], db3$sal[last_meas - 6], pch = 20, col = "green")
   dev.off()
-  jpeg(filename = paste0(dir, "/images_sc_ga/", gages$station_name_web[i], "_full.jpg"), width = 2400, height = 800, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./images/", gages$station_name_web[i], "_full.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
   plot(db2$date, db2$sal, type = "n", xlab = "Year", ylab = "Salinity (PPT)", ylim = range(db2$sal, na.rm = T), xaxt = "n", main = paste(gages$station_name_web[i], "salinity"))
   axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 2:0, hadj = -1, padj = 1.7)
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
@@ -103,9 +108,9 @@ for (i in 1:dim(gages)[1]) {
   text(db3$date[last_meas], db3$sal[last_meas], round(db3$sal[last_meas], 2), pos = 4, cex = 1.25, font = 2, col = "green3", offset = 1)
   legend("topleft", c(paste(as.numeric(format(Sys.Date(), "%Y")) - 3, "-", format(Sys.Date(), "%Y"), gages$station_name_web[i], "salinity"), "Rolling seven-day average salinity"), col = c("black", "green"), lty = 1, lwd = 3)
   dev.off()
-  err <- try (system(paste0("curl -T ", dir, "/images_sc_ga/", gages$station_name_web[i], "_thumb.jpg ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/")))
+  err <- try (ftpUpload(paste0("./images/", gages$station_name_web[i], "_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/thumbnails/", gages$station_name_web[i], "_thumb.jpg")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[i], " thumbnail NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[i], " thumbnail transferred")
-  err <- try (system(paste0("curl -T ", dir, "/images_sc_ga/", gages$station_name_web[i], "_full.jpg ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/")))
+  err <- try (ftpUpload(paste0("./images/", gages$station_name_web[i], "_full.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/full/", gages$station_name_web[i], "_full.jpg")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[i], " full-size NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[i], " full-sized transferred")
 }
 
@@ -116,11 +121,11 @@ query <- paste(query, "from coastal_sc_ga group by Year, Month")
 sal <- dbGetQuery(con, query)
 sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
-CSIstack(csi, paste0(dir, "/csi_stacked_sc_ga/"), T, F)
+CSIstack(csi, "./csi/", T, F)
 for(j in 1:dim(gages)[1]) {
-  err <- try (system(paste0("curl -T ", dir, "/csi_stacked_sc_ga/", gages$station_name_web[j], "_stacked_thumb.png ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/")))
+  err <- try (ftpUpload(paste0("./csi/", gages$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$station_name_web[j], "_stacked_thumb.png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[j], " CSI thumbnail transferred")
-  err <- try (system(paste0("curl -T ", dir, "/csi_stacked_sc_ga/", gages$station_name_web[j], "_stacked.png ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/")))
+  err <- try (ftpUpload(paste0("./csi/", gages$station_name_web[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$station_name_web[j], "_stacked.png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[j], " CSI full-sized transferred")
 }
 
@@ -140,7 +145,7 @@ for (j in 1:length(gages$station_name_web)) {
     median[i] <- quantile(por$sal[as.POSIXlt(por$date)$mon == as.numeric(format(yr3$date[i], "%m")) - 1], 0.5, na.rm = T)
   }
   median[as.POSIXlt(yr3$date)$mday == 1] <- NA
-  jpeg(filename = paste0(dir, "/salinity_duration_hydrographs_sc_ga/", gages$station_name_web[j], "_salinity_thumb.jpg"), width = 360, height = 150, units = "px", pointsize = 2, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
   par(mar = c(0, 0, 0, 0) + .1)
   plot(qyear[, 1], type = "n", xlab = "", ylab = "", ylim = range(qyear, na.rm = T), xaxt = "n", yaxt = "n", main = "", axes = F, frame.plot = T)
   for (i in 1:5) polygon(c(1:length(yr3$date), length(yr3$date):1), c(qyear[, i], rev(qyear[, i + 1])), col = col[i])
@@ -148,7 +153,7 @@ for (j in 1:length(gages$station_name_web)) {
   lines(yr3$sal, lwd = 3, col = "grey")
   lines(win30, lwd = 4, col = "black")
   dev.off()
-  jpeg(filename = paste0(dir, "/salinity_duration_hydrographs_sc_ga/", gages$station_name_web[j], "_salinity.jpg"), width = 2400, height = 800, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
   par(mar = c(5, 4, 4, 5) + .1)
   plot(qyear[, 1], type = "n", xlab = "Month of year", ylab = "Salinity (PPT)", ylim = range(qyear, na.rm = T), xaxt = "n", main = paste(gages$station_name_web[j], "three year salinity, 30 day moving window"))
   axis(1, at = which(as.POSIXlt(yr3$date)$mday == 1), labels = format(yr3$date[which(as.POSIXlt(yr3$date)$mday == 1)], "%b"), hadj = -1)
@@ -161,9 +166,11 @@ for (j in 1:length(gages$station_name_web)) {
   legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Historic monthly mean salinity"), lwd = c(5, 4, 4), col = c("black", "grey", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
-  system(paste0("curl -T ", dir, "/salinity_duration_hydrographs_sc_ga/", gages$station_name_web[j], "_salinity_thumb.jpg ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/"))
-  system(paste0("curl -T ", dir, "/salinity_duration_hydrographs_sc_ga/", gages$station_name_web[j], "_salinity.jpg ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/coastal_sc_ga/"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/", gages$station_name_web[j], "_salinity.jpg"))
 }
 
+### System level commands may not work if local environment does not have sendmail installed!!
+to <- "bmccloskey@usgs.gov"
 system(paste0("echo 'Subject: CoastalEDENdb_sc_ga upload report
-", report, "' | /usr/sbin/sendmail bmccloskey@usgs.gov"))
+", report, "' | /usr/sbin/sendmail ", to))
