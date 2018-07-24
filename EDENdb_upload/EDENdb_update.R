@@ -20,6 +20,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", hos
 data_file <- "input.csv"
 file_columns <- c("character", "character", "numeric", "character")
 err <- try (z <- read.csv(data_file, colClasses = file_columns))
+print(head(z))
 names(z) <- c("date_tm", "site", "value", "flag")
 
 # Format timestamps
@@ -31,6 +32,14 @@ range <- seq.POSIXt(first, last, "hour")
 # Remove non-hourly
 z <- z[z$date_tm %in% range, ]
 z$flag[z$flag == "NULL"] <- NA
+print(head(z))
+print(tail(z))
+print(range(range))
+print(unique(z$site))
+print(unique(z$flag))
+url <- paste0("https://sofia.usgs.gov/eden/eve/index.php?day_hour=hourly&timeseries_start=", as.Date(first) - 1, "&timeseries_end=", as.Date(last) + 2)
+for (i in 1:length(unique(z$site))) paste0(url, "&site_list%5B%5D=", unique(z$site[i]))
+print(url)
 
 # Upload matrix to EDENdb
 for (i in 1:dim(z)[1]) {
