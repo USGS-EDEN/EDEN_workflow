@@ -9,6 +9,6 @@ EDEN Workflow is an attempt to reproduce the EDEN daily (and other) workflow, in
 - **EDENdb_backup_restore:** Replace selcted EDENdb timestamps with backup .CSV data.
 - **netCDF_headers**: Modify the EDEN model output netCDF files' headers.
 - **CSSS_viewer**: Generate the CSSS webapp data, statistics, images, and report.
-- **duration_hydrographs** Produce gage and tree island ERTP duration hydrograph plots and data, prepare email, generate CSSS webapp data and plots.
+- **ERTP_hydrographs** Produce gage and tree island ERTP duration hydrograph plots and data, transfer files, and prepare alert email.
 - **coastal_EDEN:** Download daily FL and SC/GA coastal data, calculate salinities and CSIs, populate database, generate plots, and transfer files.
 - **et_rainfall_processing:** Download monthly rainfall files and annual evapotranspiration data files, process, and populate EDENdb. Also add historic rainfall and ET data to EDENdb for newly-added EDEN gages.
