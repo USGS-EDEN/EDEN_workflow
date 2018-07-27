@@ -25,8 +25,10 @@ library (lattice)
 try (setwd("./CSSS_viewer"), silent = T)
 
 # Set up DEM file
-err <- try (download.file("https://sofia.usgs.gov/eden/data/dem/eden_dem_cm_oc11.zip", "./input/eden_dem_cm_oc11.zip"))
-unzip("./input/eden_dem_cm_oc11.zip", "eden_dem_cm_oc11.nc", exdir = "./input")
+if (!file.exists("./input/eden_dem_cm_oc11.nc")) {
+  err <- try (download.file("https://sofia.usgs.gov/eden/data/dem/eden_dem_cm_oc11.zip", "./input/eden_dem_cm_oc11.zip"))
+  unzip("./input/eden_dem_cm_oc11.zip", "eden_dem_cm_oc11.nc", exdir = "./input")
+}
 dem.nc <- nc_open("./input/eden_dem_cm_oc11.nc")
 x <- ncvar_get(dem.nc, "x")
 y <- ncvar_get(dem.nc, "y")
@@ -35,13 +37,14 @@ nc_close(dem.nc)
 
 # Set up WL files
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v2rt_nc.zip"), paste0("./input/", cur_qtr, ".zip")))
-unzip(paste0("./input/", cur_qtr, ".zip"), exdir = "./input")
-file.rename(paste0("./input/", cur_qtr, "_v2rt.nc"), paste0("./input/", cur_qtr, ".nc"))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v2rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
+unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
+file.rename(paste0("../surfaces/", cur_qtr, "_v2rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 pre_qtr <- paste0(as.POSIXlt(Sys.Date() - 90)$year + 1900, "_", tolower(quarters(Sys.Date() - 90)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v2rt_nc.zip"), paste0("./input/", pre_qtr, ".zip")))
-unzip(paste0("./input/", pre_qtr, ".zip"), exdir = "./input")
-file.rename(paste0("./input/", pre_qtr, "_v2rt.nc"), paste0("./input/", pre_qtr, ".nc"))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v2rt_nc.zip"), paste0("../surfaces/", pre_qtr, ".zip")))
+unzip(paste0("../surfaces/", pre_qtr, ".zip"), exdir = "../surfaces")
+file.rename(paste0("../surfaces/", pre_qtr, "_v2rt.nc"), paste0("../surfaces/", pre_qtr, ".nc"))
+unlink("../surfaces/*.zip")
 
 # Define subareas
 pixels <- read.csv("./input/CSSS_EDEN_subpop_key.csv")
@@ -72,7 +75,7 @@ grid_AX <- grid_AX[(max(which(rowSums(grid_AX, na.rm = T) == 0)) + 1):dim(grid_A
 
 # Build depth arrays
 time <- NULL
-surf_files <- c(paste0("./input/", pre_qtr, ".nc"), paste0("./input/", cur_qtr, ".nc"))
+surf_files <- c(paste0("../surfaces/", pre_qtr, ".nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 for (i in 1:length(sub)) assign(paste0("depth_", sub[i]), NULL)
 for (i in 1:length(surf_files)) {
   print(paste("Building subareas for", surf_files[i]))
@@ -257,14 +260,14 @@ if (doy >= 0 & doy <= 89) {
 # Set up WL files
 yr <- as.POSIXlt(Sys.Date() - 1)$year + 1900
 for (i in 1991:yr)
-  if (!file.exists(paste0("./input/", i, "_q", qtr, ".nc")))
-    err <- try (download.file(paste0("https://sflthredds.er.usgs.gov/thredds/fileServer/eden/surfaces/", i, "_q", qtr, ".nc"), paste0("./input/", i, "_q", qtr, ".nc")))
-file_surf <- list.files("./input", paste0("^[0-9]{4}_q", qtr, ".nc$"))
+  if (!file.exists(paste0("../surfaces/", i, "_q", qtr, ".nc")))
+    err <- try (download.file(paste0("https://sflthredds.er.usgs.gov/thredds/fileServer/eden/surfaces/", i, "_q", qtr, ".nc"), paste0("../surfaces/", i, "_q", qtr, ".nc")))
+file_surf <- list.files("../surfaces", paste0("^[0-9]{4}_q", qtr, ".nc$"))
 time <- NULL
 for (i in 1:length(sub)) assign(paste0("depth_", sub[i]), NULL)
 for (i in 1:length(file_surf)) {
   print(file_surf[i])
-  surf.nc <- nc_open(paste0("./input/", file_surf[i]))
+  surf.nc <- nc_open(paste0("../surfaces/", file_surf[i]))
   stage <- try(ncvar_get(surf.nc, "stage", c(1, 1, z), c(-1, -1, 1)), T)
   if (!inherits(stage,"try-error")) {
     t <- ncvar_get(surf.nc, "time", z, 1)

@@ -167,7 +167,7 @@ for (j in 1:length(gages$station_name_web)) {
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
   ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"))
-  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/", gages$station_name_web[j], "_salinity.jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"))
 }
 
 ### System level commands may not work if local environment does not have sendmail installed!!

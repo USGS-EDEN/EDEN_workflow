@@ -1,0 +1,17 @@
+From: EDEN Water Level Alert <bmccloskey@usgs.gov>
+Reply-To: EDEN Water Level Alert <bmccloskey@usgs.gov>
+Subject: EDEN Water Level Alert during ERTP -- Low Water Conditions
+Content-Type: text/html; charset="UTF-8"
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'>
+<html xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<meta http-equiv='content-type' content='text/html;charset=utf-8' />
+<title>EDEN Water Level Alert -- Low Water Conditions</title>
+</head>
+<body>
+<!--opening-->
+<p><em>(Mailing list information, including unsubscription instructions, is located at the end of this message.)</em><br/></p>
+<!--/opening-->
+<p align='left'><a href='http://sofia.usgs.gov/eden/'><img src='http://sofia.usgs.gov/eden/images/logos/EDEN-logoth.gif' alt='EDEN Logo' height='111' width='288' border='0' /></a></p>
+<h3><font color="#976e5c" face="Helvetica, Geneva, Arial, SunSans-Regular, sans-serif">EDEN Water Level Alert during <a href='http://sofia.usgs.gov/eden/water_level_percentiles_map.php'>Everglades Restoration Transition Plan (ERTP)</a> -- Low Water Conditions</font></h3>
+<font face="Helvetica, Geneva, Arial, SunSans-Regular, sans-serif"><p>Under the ERTP on 

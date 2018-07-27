@@ -24,12 +24,14 @@
 !*/images/.gitkeep
 */input/*
 !*/input/.gitkeep
-!*/input/CSSS_EDEN_subpop_key.csv
-!*/input/CSSS_subpop_A1,A2.csv
+!*/input/*.csv
+!*/input/*.txt
 */output/*
 !*/output/.gitkeep
 */reports/*
 !*/reports/.gitkeep
+*surfaces/*
+!*surfaces/.gitkeep
 */surfaces/*
 !*/surfaces/.gitkeep
 */depth_contours/*
@@ -48,6 +50,8 @@
 !*/et/.gitkeep
 */rainfall/*
 !*/rainfall/.gitkeep
+*/table/*
+!*/table/.gitkeep
 data_uv*
 admin_pwd.R
 usr_pwd.R
