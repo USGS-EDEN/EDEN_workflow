@@ -258,8 +258,7 @@ write(hw, "./output/mail_HW.txt")
 write(lw, "./output/mail_LW.txt")
 
 ### System level commands may not work if local environment does not have sendmail installed!!
-to <- "bmccloskey@usgs.gov"
-# to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov, Daniel.B.Hughes@usace.army.mil, barry.n.baxter@noaa.gov, Grady.H.Caulk@usace.army.mil, DavidW@miccosukeetribe.com, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
+to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov, Daniel.B.Hughes@usace.army.mil, barry.n.baxter@noaa.gov, Grady.H.Caulk@usace.army.mil, DavidW@miccosukeetribe.com, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
 system(paste0("/usr/sbin/sendmail -f 'EDEN Water Level Alert <bmccloskey@usgs.gov>' ", to, " < ./output/mail_HW.txt"))
-# to <- "bmccloskey@usgs.gov, barry.n.baxter@noaa.gov, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
+to <- "bmccloskey@usgs.gov, barry.n.baxter@noaa.gov, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
 system(paste0("/usr/sbin/sendmail -f 'EDEN Water Level Alert <bmccloskey@usgs.gov>' ", to, " < ./output/mail_LW.txt"))
