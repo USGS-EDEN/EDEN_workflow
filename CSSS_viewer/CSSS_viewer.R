@@ -82,7 +82,7 @@ for (i in 1:length(surf_files)) {
   s.nc <- nc_open(surf_files[i])
   s <- ncvar_get(s.nc, "stage")
   t <- ncvar_get(s.nc, "time")
-  time <- as.POSIXct(c(time, as.POSIXct(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + 86400 * t, recursive = T), origin = "1970/1/1")
+  time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
   nc_close(s.nc)
   for (j in 1:length(sub)) {
     d_sub <- s[get(paste0("xmin_", sub[j])):get(paste0("xmax_", sub[j])), get(paste0("ymin_", sub[j])):get(paste0("ymax_", sub[j])), ]
@@ -221,12 +221,12 @@ col <- c("deepskyblue", "steelblue", "blue3", "blue4")
 s.nc <- nc_open(surf_files[2])
 s <- ncvar_get(s.nc, "stage")
 time <- ncvar_get(s.nc, "time")
-time <- as.POSIXct(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + 86400 * time
+time <- as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + time
 nc_close(s.nc)
 d <- sweep(s, c(1, 2), dem, "-")
-if (!dir.exists(paste0("./images/", format(time[i],'%Y')))) dir.create(paste0("./images/", format(time[i],'%Y')))
-if (!dir.exists(paste0("./images/", format(time[i],'%Y'), "_nest/"))) dir.create(paste0("./images/", format(time[i],'%Y'), "_nest/"))
 for (i in 1:length(time)) {
+  if (!dir.exists(paste0("./images/", format(time[i],'%Y')))) dir.create(paste0("./images/", format(time[i],'%Y')))
+  if (!dir.exists(paste0("./images/", format(time[i],'%Y'), "_nest/"))) dir.create(paste0("./images/", format(time[i],'%Y'), "_nest/"))
   f <- paste0(sprintf("trans%04d", as.POSIXlt(time[i])$yday), ".png")
   png(paste0("./images/", format(time[i], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
   par(mar = c(0, 0, 0, 0))
@@ -271,7 +271,7 @@ for (i in 1:length(file_surf)) {
   stage <- try(ncvar_get(surf.nc, "stage", c(1, 1, z), c(-1, -1, 1)), T)
   if (!inherits(stage,"try-error")) {
     t <- ncvar_get(surf.nc, "time", z, 1)
-    time <- as.POSIXct(c(time, as.POSIXct(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + 86400 * t, recursive = T), origin = "1970/1/1")
+    time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
     nc_close(surf.nc)
     for (j in 1:length(sub)) {
       stage_sub <- stage[get(paste0("xmin_", sub[j])):get(paste0("xmax_", sub[j])), get(paste0("ymin_", sub[j])):get(paste0("ymax_", sub[j]))]
