@@ -109,11 +109,15 @@ enp <- NULL
 # Loop through days
 for (i in 4:0) {
   enp_file <- NULL
-  # enp_file <- list.files("./enp", paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]")) #for local files
+  ## For local files, download manually to ./enp and uncomment to following:
+  # enp_file <- list.files("./enp", paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]")); err <- err2 <- 1
+
+  ## By default, download remote files (comment out next two lines to use local files)
   # Find today's ENP file name
   err2 <- try (enp_file <- tail(strsplit(grep(paste0("enp_", format(days[2] - i, "%Y%m%d"), "_0[456]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/enp/"), "\r*\n")[[1]], value = T), " ")[[1]], n = 1))
   # Download today's ENP file
   err <- try (download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)))
+
   if (inherits(err, "try-error") | inherits(err2, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
     report <- paste0(report, "ENP input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
   } else {
@@ -165,7 +169,10 @@ sfwmd <- NULL
 # Loop through days
 for (i in 4:0) {
   sfwmd_file <- NULL
-  # sfwmd_file <- list.files("./sfwmd", paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")) #for local files
+  ## For local files, download manually to ./enp and uncomment to following:
+  # sfwmd_file <- list.files("./sfwmd", paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")); err <- err2 <- 1
+  
+  ## By default, download remote files (comment out next two lines to use local files)
   # Find today's SFWMD file name
   err2 <- try (sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
   # Download today's SFWMD file
