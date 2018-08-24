@@ -191,3 +191,4 @@ for (d in num_days) {
   system(paste0("echo 'Subject: data_uv-AQ-extended-", d, "day upload report\n
   ", report, "' | /usr/sbin/sendmail ", to))
 }
+setwd("..")

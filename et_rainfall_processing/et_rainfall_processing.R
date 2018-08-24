@@ -120,3 +120,4 @@ for (i in 1:dim(dt3)[1]) {
   query <- paste0("update et set `et_", gage, "` = ", dt3$et[i], " where date = '", dt3$date[i], "'")
   dbSendQuery(con, query)
 }
+setwd("..")

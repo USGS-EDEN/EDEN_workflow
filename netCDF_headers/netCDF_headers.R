@@ -54,3 +54,4 @@ nc_close(wl.nc)
 
 err <- try (ftpUpload(paste0("./surfaces/", wl_file), paste0(ftp_dir, wl_file)))
 err <- try (ftpUpload(paste0("./surfaces/", d_file), paste0(ftp_dir, "d", cur_qtr, "_fixed.nc")))
+setwd("..")

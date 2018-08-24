@@ -231,7 +231,7 @@ for (i in 1:length(time)) {
   png(paste0("./images/", format(time[i], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
   par(mar = c(0, 0, 0, 0))
   image(x, y, d[, , i], col = col, breaks = c(0, 17, 30, 46, 600), axes = F, asp = 1)
-  text(x[1], y[10], as.Date(time[i]), pos = 4)
+  text(x[1], y[10], time[i], pos = 4)
   #points(x[c(1, 1, 287, 287)], y[c(1, 405, 1, 405)], pch = 16) #positioning markers for Leaflet map
   dev.off()
   err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "/", f)))
@@ -303,3 +303,4 @@ dev.off()
 
 ftpUpload(paste0("./output/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"))
 ftpUpload(paste0("./output/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"), "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report.pdf")
+setwd("..")

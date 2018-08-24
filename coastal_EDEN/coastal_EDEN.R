@@ -189,3 +189,4 @@ for (j in 1:length(db$station_name_web)) {
 to <- "bmccloskey@usgs.gov"
 system(paste0("echo 'Subject: CoastalEDENdb upload report
 ", report, "' | /usr/sbin/sendmail ", to))
+setwd("..")

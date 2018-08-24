@@ -107,7 +107,7 @@ for (i in 1:length(fls)) {
     png(paste0("./images/", format(time[j], '%Y'), "_", sc[i], "/", f), width = 754, height = 1015, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
     image(x, y2, s, col = col, breaks = c(0, 17, 30, 46, 600), axes = F, asp = 1)
-    text(x[58], y2[47], as.Date(time[j]), pos = 4)
+    text(x[58], y2[47], time[j], pos = 4)
     # points(x[c(58, 58, 344, 344)], y2[c(38, 442, 38, 442)], pch = 16) #positioning markers for Leaflet map
     dev.off()
   }
@@ -302,3 +302,4 @@ for (a in 1:length(fls)) {
   write("\n", fl2, append = T)
   write(paste0("<tr><td bgcolor='#a0c1e7'><strong>Avg.</strong></td><td bgcolor='white'><strong>", paste(round(avg[grep("four_hyd", names(avg))]), collapse = " days</strong></td><td bgcolor='white'><strong>"), " days</strong></td></tr>"), fl2, append = T)
 }
+setwd("..")

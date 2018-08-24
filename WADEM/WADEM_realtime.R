@@ -54,12 +54,12 @@ for (i in 1:length(file_surf)) {
     image(x, y, depth[, , j], col = col, breaks = brks, axes = F, asp = 1)
     text(x[1], y[10], time[j], pos = 4)
     dev.off()
-    err <- try(ftpUpload(paste0("./images/depth_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/wb_depth_", format(time[j], '%Y'), "/", f)))
+    err <- try(ftpUpload(paste0("./images/depth_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_", format(time[j], '%Y'), "/", f)))
   }
 }
 
 # recession rates -- first quarter must be handled seperately
-surf.nc <- nc_open(paste0("../surfaces/",file_surf[1]))
+surf.nc <- nc_open(paste0("../surfaces/", file_surf[1]))
 stage <- ncvar_get(surf.nc, "stage")
 t <- ncvar_get(surf.nc, "time")
 time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t + 14
@@ -67,18 +67,19 @@ nc_close(surf.nc)
 surf.nc <- nc_open(paste0("../surfaces/", file_surf[2]))
 stage <- abind(stage, ncvar_get(surf.nc, "stage"))
 t <- ncvar_get(surf.nc, "time")
-time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T))
+time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t + 14, recursive = T))
 nc_close(surf.nc)
 depth <- sweep(stage, c(1, 2), dem, "-")
-rr <- (depth[, , 1:(dim(depth)[3] - 14)] - depth[, , 15:dim(depth)[3]]) / 14
+rr <- (depth[, , 15:dim(depth)[3]] - depth[, , 1:(dim(depth)[3] - 14)]) / 14
 brks2 <- c(-1000, -0.41, 0, 0.2, 0.51, 0.78, 1.02, 1000)
 for (j in 1:(length(time) - 14)) {
   f <- paste0(sprintf("trans%04d", as.POSIXlt(time[j])$yday), ".png")
   if (!dir.exists(paste0("./images/rr_", format(time[j],'%Y')))) dir.create(paste0("./images/rr_", format(time[j],'%Y')))
   png(paste0("./images/rr_", format(time[j], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
   par(mar = c(0, 0, 0, 0))
-  image(x, y, rr[, , j], col = rev(col), breaks = brks2, axes = F, asp = 1)
+  image(x, y, rr[, , j], col = col, breaks = brks2, axes = F, asp = 1)
   text(x[1], y[10], time[j], pos = 4)
   dev.off()
-  err <- try(ftpUpload(paste0("./images/rr_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/rr/wb_rr_", format(time[j], '%Y'), "/", f)))
+  err <- try(ftpUpload(paste0("./images/rr_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/rr/rr_", format(time[j], '%Y'), "/", f)))
 }
+setwd("..")

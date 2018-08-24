@@ -238,3 +238,4 @@ for (i in length(range):1) {
     query <- paste0(query, " where date = '", range[i], "'")
   dbSendQuery(con, query)
 }
+setwd("..")

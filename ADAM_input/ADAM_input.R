@@ -245,3 +245,4 @@ err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d
 to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
 system(paste0("(echo 'Subject: data_uv_AQ.txt upload report
 ", report, "';uuencode ", "./output/data_uv_AQ.txt.zip data_uv_AQ.txt.zip;uuencode ", "./reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))
+setwd("..")
