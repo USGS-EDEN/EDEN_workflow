@@ -82,7 +82,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
       if (any(grepl("_Eqp|_Dry|_Fld", tmp[, dd_col])))
         tmp <- tmp[-which(grepl("_Eqp|_Dry|_Fld", tmp[, dd_col])), ]
       # URLs with no returned data
-      if (dim(tmp)[1] == 0 | tmp[, 1] == "") {
+      if (dim(tmp)[1] == 0 || tmp[, 1] == "") {
         report <- paste0(report, "Gage ", usgs_gages$station_name_web[i], " missing\n")
       } else {
         # Check presence of yesterday's noon timestamp; add to count
