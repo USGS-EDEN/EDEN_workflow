@@ -20,20 +20,20 @@ try (setwd("./coastal_EDEN"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
-gages <- read.csv("./SCGA_salinity_gages.csv", colClasses = c("character", "character", "character", "numeric", "numeric"))
+gages <- read.csv("./SCGA_salinity_gages.csv", colClasses = c("character", "character", "numeric", "numeric"))
 days <- c(Sys.Date() - 14, Sys.Date() - 1)
 range <- seq.Date(days[1], days[2], "day")
 v <- data.frame(datetime = range)
 
 # Retrieve data and build input data.frame
 report <- ""
-for (i in 1:length(gages$station_name_web)) {
-  print(gages$station_name_web[i])
+for (i in 1:length(gages$NWIS_ID)) {
+  print(gages$NWIS_ID[i])
   # Generate AQUARIUS URLs; add 1 for DST end timestamps
   url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$NWIS_ID[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=00095&statCd=00003&access=3")
   tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
   if (inherits(tmp, "try-error")) {
-    report <- paste0(report, "Data _NOT_ downloaded for ", gages$station_name_web[i], "\n")
+    report <- paste0(report, "Data _NOT_ downloaded for ", gages$NWIS_ID[i], "\n")
   } else {
     # Remove data descriptor header row
     tmp <- tmp[2:dim(tmp)[1], ]
@@ -42,7 +42,7 @@ for (i in 1:length(gages$station_name_web)) {
       tmp <- tmp[-which(apply(tmp, 1, function (x) any(grepl("_Eqp", x)))), ]
     # URLs with no returned data
     if (tmp[, 1] == "") {
-      report <- paste0(report, gages$station_name_web[i], " missing\n")
+      report <- paste0(report, gages$NWIS_ID[i], " missing\n")
     } else {
       # Convert timestamps; shift DST
       tmp$datetime <- as.Date(tmp$datetime, format = "%Y-%m-%d")
@@ -51,7 +51,7 @@ for (i in 1:length(gages$station_name_web)) {
       dd_col <- ifelse(dim(tmp)[2] > 5, 6, 4)
       tmp <- tmp[tmp[, dd_col] != "", ]
       v <- cbind(v, merge(range, tmp, by.x = 1, by.y = "datetime", all.x = T)[, dd_col])
-      names(v)[dim(v)[2]] <- gages$station_name_web[i]
+      names(v)[dim(v)[2]] <- gages$NWIS_ID[i]
     }
   }
 }
@@ -80,12 +80,12 @@ for (i in 1:dim(v)[1]) {
 
 # Create year+ plots of parameters, and thumbnails
 for (i in 1:dim(gages)[1]) {
-  db2 <- dbGetQuery(con, paste0("select date, ", gages$station_name_web[i], "_salinity as sal from coastal_sc_ga where date >= ", as.numeric(format(Sys.Date(), "%Y")) - 3, format(Sys.Date(), "%m"), "01 order by date"))
+  db2 <- dbGetQuery(con, paste0("select date, ", gages$NWIS_ID[i], "_salinity as sal from coastal_sc_ga where date >= ", as.numeric(format(Sys.Date(), "%Y")) - 3, format(Sys.Date(), "%m"), "01 order by date"))
   db2$date <- as.Date(db2$date, format = "%Y-%m-%d")
   last_meas <- rev(which(!is.na(db2$sal)))[1]
   db3 <- data.frame(date = db2$date, sal = NA)
   for (j in 7:last_meas) db3$sal[j] <- mean(db2$sal[(j - 6):j], na.rm = T)
-  jpeg(paste0("./images/", gages$station_name_web[i], "_thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
+  jpeg(paste0("./images/", gages$NWIS_ID[i], "thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
   par(mar = c(0, 0, 0, 0) + .1)
   plot(db2$date, db2$sal, type = "n", xlab = "", ylab = "", ylim = range(db2$sal, na.rm = T), xaxt = "n", xaxt = "n", main = "")
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
@@ -95,8 +95,8 @@ for (i in 1:dim(gages)[1]) {
   lines(db3$date, db3$sal, lwd = 2, col = "green")
   points(db3$date[last_meas], db3$sal[last_meas - 6], pch = 20, col = "green")
   dev.off()
-  jpeg(paste0("./images/", gages$station_name_web[i], "_full.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
-  plot(db2$date, db2$sal, type = "n", xlab = "Year", ylab = "Salinity (PPT)", ylim = range(db2$sal, na.rm = T), xaxt = "n", main = paste(gages$station_name_web[i], "salinity"))
+  jpeg(paste0("./images/", gages$NWIS_ID[i], ".jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
+  plot(db2$date, db2$sal, type = "n", xlab = "Year", ylab = "Salinity (PPT)", ylim = range(db2$sal, na.rm = T), xaxt = "n", main = paste(gages$NWIS_ID[i], "salinity"))
   axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 2:0, hadj = -1, padj = 1.7)
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
   abline(v = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], lty = "dashed", col = "black")
@@ -106,35 +106,35 @@ for (i in 1:dim(gages)[1]) {
   points(db3$date[last_meas], db3$sal[last_meas], pch = 20, cex = 3, col = "green")
   text(db3$date[last_meas], db2$sal[last_meas], paste(round(db2$sal[last_meas], 2), "\n", format(db2$date[last_meas], "%m/%d/%Y"), sep = ""), pos = 3, cex = 1.25, font = 2, col = "gray35", offset = 2)
   text(db3$date[last_meas], db3$sal[last_meas], round(db3$sal[last_meas], 2), pos = 4, cex = 1.25, font = 2, col = "green3", offset = 1)
-  legend("topleft", c(paste(as.numeric(format(Sys.Date(), "%Y")) - 3, "-", format(Sys.Date(), "%Y"), gages$station_name_web[i], "salinity"), "Rolling seven-day average salinity"), col = c("black", "green"), lty = 1, lwd = 3)
+  legend("topleft", c(paste(as.numeric(format(Sys.Date(), "%Y")) - 3, "-", format(Sys.Date(), "%Y"), gages$NWIS_ID[i], "salinity"), "Rolling seven-day average salinity"), col = c("black", "green"), lty = 1, lwd = 3)
   dev.off()
-  err <- try (ftpUpload(paste0("./images/", gages$station_name_web[i], "_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/thumbnails/", gages$station_name_web[i], "_thumb.jpg")))
-  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[i], " thumbnail NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[i], " thumbnail transferred")
-  err <- try (ftpUpload(paste0("./images/", gages$station_name_web[i], "_full.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/full/", gages$station_name_web[i], "_full.jpg")))
-  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[i], " full-size NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[i], " full-sized transferred")
+  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], "thumb.jpg")))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[i], " thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[i], " thumbnail transferred")
+  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], ".jpg")))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[i], " full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[i], " full-sized transferred")
 }
 
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
 for(j in 1:dim(gages)[1])
-  query <- paste0(query, ", avg(", gages$station_name_web[j], "_salinity) as ", gages$station_name_web[j])
+  query <- paste0(query, ", avg(", gages$NWIS_ID[j], "_salinity) as `", gages$NWIS_ID[j], "`")
 query <- paste(query, "from coastal_sc_ga group by Year, Month")
 sal <- dbGetQuery(con, query)
 sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F)
 for(j in 1:dim(gages)[1]) {
-  err <- try (ftpUpload(paste0("./csi/", gages$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$station_name_web[j], "_stacked_thumb.png")))
-  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[j], " CSI thumbnail transferred")
-  err <- try (ftpUpload(paste0("./csi/", gages$station_name_web[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$station_name_web[j], "_stacked.png")))
-  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$station_name_web[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$station_name_web[j], " CSI full-sized transferred")
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png")))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], ".png")))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-sized transferred")
 }
 
 col <- c("tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
-for (j in 1:length(gages$station_name_web)) {
-  por <- dbGetQuery(con, paste0("select date, ", gages$station_name_web[j], "_salinity as sal from coastal_sc_ga order by date"))
+for (j in 1:length(gages$NWIS_ID)) {
+  por <- dbGetQuery(con, paste0("select date, ", gages$NWIS_ID[j], "_salinity as sal from coastal_sc_ga order by date"))
   por$date <- as.Date(por$date, format = "%Y-%m-%d")
-  rng <- dbGetQuery(con, paste0("select min(date) as start, max(date) as end from coastal_sc_ga where ", gages$station_name_web[j], "_salinity is not null"))
-  yr3 <- dbGetQuery(con, paste0("select date, ", gages$station_name_web[j], "_salinity as sal from coastal_sc_ga where date >= ", as.numeric(format(Sys.Date(), "%Y")) - 3, format(Sys.Date(), "%m"), "01 order by date"))
+  rng <- dbGetQuery(con, paste0("select min(date) as start, max(date) as end from coastal_sc_ga where ", gages$NWIS_ID[j], "_salinity is not null"))
+  yr3 <- dbGetQuery(con, paste0("select date, ", gages$NWIS_ID[j], "_salinity as sal from coastal_sc_ga where date >= ", as.numeric(format(Sys.Date(), "%Y")) - 3, format(Sys.Date(), "%m"), "01 order by date"))
   yr3$date <- as.Date(yr3$date, format = "%Y-%m-%d")
   win30 <- rep(NA, length(yr3$date))
   for (i in 30:length(win30))
@@ -145,7 +145,7 @@ for (j in 1:length(gages$station_name_web)) {
     median[i] <- quantile(por$sal[as.POSIXlt(por$date)$mon == as.numeric(format(yr3$date[i], "%m")) - 1], 0.5, na.rm = T)
   }
   median[as.POSIXlt(yr3$date)$mday == 1] <- NA
-  jpeg(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
+  jpeg(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "thumb.jpg"), width = 360, height = 150, pointsize = 2, quality = 100, type = "quartz")
   par(mar = c(0, 0, 0, 0) + .1)
   plot(qyear[, 1], type = "n", xlab = "", ylab = "", ylim = range(qyear, na.rm = T), xaxt = "n", yaxt = "n", main = "", axes = F, frame.plot = T)
   for (i in 1:5) polygon(c(1:length(yr3$date), length(yr3$date):1), c(qyear[, i], rev(qyear[, i + 1])), col = col[i])
@@ -153,9 +153,9 @@ for (j in 1:length(gages$station_name_web)) {
   lines(yr3$sal, lwd = 3, col = "grey")
   lines(win30, lwd = 4, col = "black")
   dev.off()
-  jpeg(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
+  jpeg(paste0("./duration_hydrographs/", gages$NWIS_ID[j], ".jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
   par(mar = c(5, 4, 4, 5) + .1)
-  plot(qyear[, 1], type = "n", xlab = "Month of year", ylab = "Salinity (PPT)", ylim = range(qyear, na.rm = T), xaxt = "n", main = paste(gages$station_name_web[j], "three year salinity, 30 day moving window"))
+  plot(qyear[, 1], type = "n", xlab = "Month of year", ylab = "Salinity (PPT)", ylim = range(qyear, na.rm = T), xaxt = "n", main = paste(gages$NWIS_ID[j], "three year salinity, 30 day moving window"))
   axis(1, at = which(as.POSIXlt(yr3$date)$mday == 1), labels = format(yr3$date[which(as.POSIXlt(yr3$date)$mday == 1)], "%b"), hadj = -1)
   axis(1, at = which(as.POSIXlt(yr3$date)$yday == 0), labels = format(yr3$date[which(as.POSIXlt(yr3$date)$yday == 0)], "%Y"), padj = 1)
   for (i in 1:5) polygon(c(1:length(yr3$date), length(yr3$date):1), c(qyear[, i], rev(qyear[, i + 1])), col = col[i])
@@ -166,8 +166,8 @@ for (j in 1:length(gages$station_name_web)) {
   legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Historic monthly mean salinity"), lwd = c(5, 4, 4), col = c("black", "grey", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
-  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_duration_hydrographs/", gages$station_name_web[j], "_salinity_thumb.jpg"))
-  ftpUpload(paste0("./duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_duration_hydrographs/", gages$station_name_web[j], "_salinity.jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], "thumb.jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], ".jpg"))
 }
 
 ### System level commands may not work if local environment does not have sendmail installed!!
