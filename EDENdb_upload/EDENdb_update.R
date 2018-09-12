@@ -38,7 +38,7 @@ print(range(range))
 print(unique(z$site))
 print(unique(z$flag))
 url <- paste0("https://sofia.usgs.gov/eden/eve/index.php?day_hour=hourly&timeseries_start=", as.Date(first) - 1, "&timeseries_end=", as.Date(last) + 2)
-for (i in 1:length(unique(z$site))) url <- paste0(url, "&site_list%5B%5D=", unique(z$site[i]))
+for (i in 1:length(unique(z$site))) url <- paste0(url, "&site_list%5B%5D=", unique(z$site)[i])
 print(url)
 
 # Upload matrix to EDENdb
