@@ -122,12 +122,30 @@ sal <- dbGetQuery(con, query)
 sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F)
+for (i in 1:dim(csi)[1]) {
+  d1 <- d2 <- as.Date(paste0(rownames(csi)[i], "-01"))
+  m <- format(d2, format = "%m")
+  while (format(d2, format = "%m") == m) d2 <- d2 + 1
+  d2 <- as.integer(format(d2 - 1, format = "%d"))
+  for (k in 1:d2) {
+    query <- "update coastal_sc_ga set "
+    for (j in 1:dim(gages)[1]) {
+      c <- if(is.na(csi[i, 24, j])) "NULL" else csi[i, 24, j]
+      query <- paste0(query, "`", gages$NWIS_ID[j], "_csi` = ", c, ", ")
+    }
+    query <- paste0(substr(query, 1, nchar(query) - 2), " where date = '", rownames(csi)[i], "-", sprintf("%02d", k), "'")
+    dbSendQuery(con, query)
+  }
+}
+#write.table(csi[dim(csi)[1], 24, ], "./csi/csi_values.csv", quote = F, sep = ",", col.names = F)
 for(j in 1:dim(gages)[1]) {
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], ".png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-sized transferred")
 }
+#err <- try (ftpUpload("./csi/csi_values.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values.csv"))
+#if (inherits(err, "try-error")) report <- paste0(report, "\nCSI values NOT transferred") else report <- paste0(report, "\nCSI values transferred")
 
 col <- c("tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
 for (j in 1:length(gages$NWIS_ID)) {
