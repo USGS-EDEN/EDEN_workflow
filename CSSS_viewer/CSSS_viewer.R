@@ -80,7 +80,7 @@ for (i in 1:length(sub)) assign(paste0("depth_", sub[i]), NULL)
 for (i in 1:length(surf_files)) {
   print(paste("Building subareas for", surf_files[i]))
   s.nc <- nc_open(surf_files[i])
-  s <- ncvar_get(s.nc, "stage")
+  s <- ncvar_get(s.nc, "stage", collapse_degen = F)
   t <- ncvar_get(s.nc, "time")
   time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
   nc_close(s.nc)
@@ -219,7 +219,7 @@ err <- try (ftpUpload("./output/recent_week_subpop_mean_water_depth.png", "ftp:/
 # Generate depth surface images
 col <- c("deepskyblue", "steelblue", "blue3", "blue4")
 s.nc <- nc_open(surf_files[2])
-s <- ncvar_get(s.nc, "stage")
+s <- ncvar_get(s.nc, "stage", collapse_degen = F)
 time <- ncvar_get(s.nc, "time")
 time <- as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + time
 nc_close(s.nc)
@@ -238,7 +238,7 @@ for (i in 1:length(time)) {
   if (as.POSIXlt(time[i])$yday >= 59 & as.POSIXlt(time[i])$yday <= 195) { #leapyear tweak undone
     f2 <- paste0(sprintf("trans%04d", as.POSIXlt(time[i])$yday - 59), ".png")
     file.copy(paste0("./images/", format(time[i], '%Y'), "/", f), paste0("./images/", format(time[i],'%Y'), "_nest/", f2), overwrite = T)
-    err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "_nest/", f2), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "_nest/", f)))
+    err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "_nest/", f2), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "_nest/", f2)))
   }
 }
 
