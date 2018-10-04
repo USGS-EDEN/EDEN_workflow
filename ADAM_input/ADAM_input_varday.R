@@ -187,7 +187,7 @@ for (d in num_days) {
   err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), "_", d, "days.txt")))
   
   ### System level commands may not work if local environment does not have sendmail installed!!
-  to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov"
+  to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov, kjconlon@usgs.gov"
   system(paste0("echo 'Subject: data_uv-AQ-extended-", d, "day upload report\n
   ", report, "' | /usr/sbin/sendmail ", to))
 }
