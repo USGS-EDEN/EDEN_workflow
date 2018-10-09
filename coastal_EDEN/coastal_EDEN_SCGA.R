@@ -130,14 +130,14 @@ for (i in 1:dim(csi)[1]) {
   for (k in 1:d2) {
     query <- "update coastal_sc_ga set "
     for (j in 1:dim(gages)[1]) {
-      c <- if(is.na(csi[i, 24, j])) "NULL" else csi[i, 24, j]
+      c <- if(is.na(csi[i, 12, j])) "NULL" else csi[i, 12, j]
       query <- paste0(query, "`", gages$NWIS_ID[j], "_csi` = ", c, ", ")
     }
     query <- paste0(substr(query, 1, nchar(query) - 2), " where date = '", rownames(csi)[i], "-", sprintf("%02d", k), "'")
     dbSendQuery(con, query)
   }
 }
-#write.table(csi[dim(csi)[1], 24, ], "./csi/csi_values.csv", quote = F, sep = ",", col.names = F)
+#write.table(csi[dim(csi)[1], 12, ], "./csi/csi_values.csv", quote = F, sep = ",", col.names = F)
 for(j in 1:dim(gages)[1]) {
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
