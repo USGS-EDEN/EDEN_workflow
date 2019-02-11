@@ -9,12 +9,14 @@
 
 # POR extraction of average rainfall for all pixels overlapping the EDEN domain
 
-print("These libraries must be installed: ncdf4, PBSmapping")
+print("These libraries must be installed: ncdf4, PBSmapping, RCurl")
 # Required libraries. If not present, run:
 # install.packages("ncdf4")
 # install.packages("PBSmapping")
+# install.packages("RCurl")
 library (ncdf4)
 library (PBSmapping)
+library (RCurl)
 
 try (setwd("./et_rainfall_processing"), silent = T)
 
@@ -37,11 +39,16 @@ for (i in 1:length(x))
       p <- which.min(((pixel_utm$X - x[i]) ^ 2 + (pixel_utm$Y - y[j]) ^ 2) ^ 0.5)
       pixel_utm$keep[p] <- 1
     }
-}
 
 pix2 <- pixel_utm[which(pixel_utm$keep == 1), ]
 
-dt <- seq(as.Date("2002-01-01"), as.Date("2018-12-31"), by = "day")
+# assumes data delivery in month after data coverage
+year <- format(Sys.Date(), "%Y")
+month <- format(Sys.Date(), "%m")
+if (month == "01") { month <- "12"; year <- as.numeric(year) - 1 } else month <- as.numeric(month) - 1
+fst <- as.Date(paste(year, month, "01", sep = "-"))
+lst <- (seq(fst, length = 2, by = "month") - 1)[2]
+dt <- seq(as.Date("2002-01-01"), lst, by = "day")
 rain_old <- list.files("./rainfall/rainfall_archive/", "rainfall_[0-9]{4}.txt$", full.names = T)
 rain_new <- list.files("./rainfall/rainfall_archive/", "rainfall_[0-9]{6}.txt$", full.names = T)
 
@@ -61,10 +68,9 @@ for (i in 1:length(rain_old)) {
   }
 }
 
-
 for (i in 1:length(rain_new)) {
-  yr <- as.numeric(substr(rain_new[i], 62, 65))
-  mn <- as.numeric(substr(rain_new[i], 66, 67))
+  yr <- as.numeric(substr(rain_new[i], 39, 42))
+  mn <- as.numeric(substr(rain_new[i], 43, 44))
   if (mn == 12) { yr2 <- yr + 1; mn2 <- 1
   } else { yr2 <- yr; mn2 <- mn + 1 }
   m <- seq(as.Date(paste0(yr, "-", mn, "-01")), as.Date(paste0(yr2, "-", mn2, "-01")) - 1, by = "day")
@@ -80,3 +86,4 @@ for (i in 1:length(rain_new)) {
     }
   }
 }
+ftpUpload("./daily_average_rainfall-all_EDEN_pixels.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/daily_average_rainfall-all_EDEN_pixels.csv")
