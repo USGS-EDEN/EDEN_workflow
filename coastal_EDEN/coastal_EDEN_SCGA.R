@@ -115,13 +115,17 @@ for (i in 1:dim(gages)[1]) {
 }
 
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
-for(j in 1:dim(gages)[1])
+for (j in 1:dim(gages)[1])
   query <- paste0(query, ", avg(", gages$NWIS_ID[j], "_salinity) as `", gages$NWIS_ID[j], "`")
 query <- paste(query, "from coastal_sc_ga group by Year, Month")
 sal <- dbGetQuery(con, query)
+sal$`021720698`[1:168] <- NA  # start 021720698 in 04/1997
+sal$`02110760`[1:130] <- NA   # start 02110760 in 02/1994
 sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
-CSIstack(csi, "./csi/", T, F)
+CSIstack(csi, "./csi/", T, F, "bottom")
+CSIplot(csi, "./csi", "bottom")
+CSIwrite(csi, "./csi")
 for (i in 1:dim(csi)[1]) {
   d1 <- d2 <- as.Date(paste0(rownames(csi)[i], "-01"))
   m <- format(d2, format = "%m")
@@ -137,15 +141,20 @@ for (i in 1:dim(csi)[1]) {
     dbSendQuery(con, query)
   }
 }
-#write.table(csi[dim(csi)[1], 12, ], "./csi/csi_values.csv", quote = F, sep = ",", col.names = F)
-for(j in 1:dim(gages)[1]) {
+for (j in 1:dim(gages)[1]) {
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], ".png")))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-sized transferred")
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/", gages$NWIS_ID[j], ".csv")))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI values NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI values transferred")
+  for (i in 1:24) {
+    err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_interval", i, ".png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_plot/", gages$NWIS_ID[j], "_interval", i, ".png")))
+    if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " transferred")
+  }
 }
-#err <- try (ftpUpload("./csi/csi_values.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values.csv"))
-#if (inherits(err, "try-error")) report <- paste0(report, "\nCSI values NOT transferred") else report <- paste0(report, "\nCSI values transferred")
+err <- try (ftpUpload("./csi/CSI_calculation_data.txt", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/CSI_calculation_data.csv"))
+if (inherits(err, "try-error")) report <- paste0(report, "\n", " CSI raw input values NOT transferred") else report <- paste0(report, "\n", " CSI raw input values transferred")
 
 col <- c("tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
 for (j in 1:length(gages$NWIS_ID)) {
@@ -187,6 +196,13 @@ for (j in 1:length(gages$NWIS_ID)) {
   ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], "thumb.jpg"))
   ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], ".jpg"))
 }
+
+query <- "select date"
+for (j in 1:dim(gages)[1])
+  query <- paste0(query, ", `", gages$NWIS_ID[j], "_csi`")
+query <- paste0(query, " from coastal_sc_ga where date >= 19840301 group by year(date), month(date)")
+c <- dbGetQuery(con, query)
+write.csv(c, "./csi/csi_values.csv", row.names = F)
 
 ### System level commands may not work if local environment does not have sendmail installed!!
 to <- "bmccloskey@usgs.gov"

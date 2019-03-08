@@ -178,7 +178,7 @@ for (j in 1:length(db$station_name_web)) {
   axis(4)
   mtext("Temperature (°C)", side = 4, line = 3)
   legend("topright", c("90% to Max.", "75% to 90%", "25% to 75%", "10% to 25%", "Min. to 10%"), fill = col[5:1], cex = 1.5, bty = "n", title = "Salinity bins")
-  legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Saily temperature values", "Historic monthly mean salinity"), lwd = c(5, 4, 4, 4), col = c("black", "grey", "red", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
+  legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Daily temperature values", "Historic monthly mean salinity"), lwd = c(5, 4, 4, 4), col = c("black", "grey", "red", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
   ftpUpload(paste0("./duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/salinity_duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"))
