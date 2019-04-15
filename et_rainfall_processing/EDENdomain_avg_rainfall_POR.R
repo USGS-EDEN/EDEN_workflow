@@ -69,6 +69,7 @@ for (i in 1:length(rain_old)) {
 }
 
 for (i in 1:length(rain_new)) {
+  print(rain_new[i])
   yr <- as.numeric(substr(rain_new[i], 39, 42))
   mn <- as.numeric(substr(rain_new[i], 43, 44))
   if (mn == 12) { yr2 <- yr + 1; mn2 <- 1

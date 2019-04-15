@@ -37,7 +37,6 @@ for (i in 1:length(x))
       p <- which.min(((pixel_utm$X - x[i]) ^ 2 + (pixel_utm$Y - y[j]) ^ 2) ^ 0.5)
       pixel_utm$keep[p] <- 1
     }
-}
 
 pix2 <- pixel_utm[which(pixel_utm$keep == 1), ]
 

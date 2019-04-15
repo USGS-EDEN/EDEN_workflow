@@ -2,12 +2,13 @@
 # install.packages("ncdf4")
 # install.packages("RMySQL")
 # install.packages("abind")
-library(ncdf4)
-library(RMySQL)
-library(abind)
+library (ncdf4)
+library (RMySQL)
+library (abind)
 
 # Connect to database, list of gages for which to acquire data
-source("./usr_pwd.R")
+try (setwd("./surface_review"), silent = T)
+source ("../usr_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
 
 # Vectors of plotting colors
@@ -18,13 +19,13 @@ depth.col <- c("#9ECAE1", "#9AC8E0", "#97C6DF", "#94C4DE", "#91C3DE", "#8EC1DD",
 time <- stage <- depth <- NULL
 
 # Place WL and depth .nc files to be reviewed in working directory
-file_surf <- list.files(dir, "^[0-9]{4}_q[1-4].nc$")
-depth_surf <- list.files(dir, "^d[0-9]{4}_q[1-4]_fixed.nc$")
+file_surf <- list.files("./surfaces", "^[0-9]{4}_q[1-4].nc$")
+depth_surf <- list.files("./surfaces", "^d[0-9]{4}_q[1-4].nc$")
 
 # Loop through potentially multiple surfaces, create data arrays
 for(i in 1:length(file_surf)) {
   # WL .nc's
-  surf.nc <- nc_open(paste0(dir, "/", file_surf[i]))
+  surf.nc <- nc_open(paste0("./surfaces", "/", file_surf[i]))
 
   # Set up X and Y vectors
   if(i==1) { x <- ncvar_get(surf.nc, "x"); y <- ncvar_get(surf.nc, "y") }
@@ -34,11 +35,11 @@ for(i in 1:length(file_surf)) {
   
   # Time vector
   t <- ncvar_get(surf.nc, "time")
-  time <- as.POSIXct(c(time, as.POSIXct(surf.nc$dim$time$units, format="days since %Y-%m-%dT%H:%M:%SZ") + 86400 * t, recursive = T), origin = "1970/1/1")
+  time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format="days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
   nc_close(surf.nc)
 
   # Depth .nc's
-  surf.nc <- nc_open(paste0(dir, "/", depth_surf[i]))
+  surf.nc <- nc_open(paste0("./surfaces", "/", depth_surf[i]))
   
   # Depth array
   depth <- abind(depth, ncvar_get(surf.nc, "depth"))
@@ -59,7 +60,7 @@ for (j in 1:dim(gages)[1]) {
   d <- depth[xval, yval, ]
   
   # EDENdb data values
-  db <- dbGetQuery(con, paste0("select datetime, `stage_", gages$station_name_web[j], "` + ", gages$conv[j], " as stage from stage where datetime >= ", format(time[1] - 86400,"%Y%m%d"), "000000 and datetime < ", format(time[length(time)] + 86400 * 2, "%Y%m%d"), "000000 order by datetime"))
+  db <- dbGetQuery(con, paste0("select datetime, `stage_", gages$station_name_web[j], "` + ", gages$conv[j], " as stage from stage where datetime >= ", format(time[1] - 1,"%Y%m%d"), "000000 and datetime < ", format(time[length(time)] + 2, "%Y%m%d"), "000000 order by datetime"))
   # Convert timestamps
   db$datetime <- as.POSIXct(db$datetime, tz = "EST", format = "%Y-%m-%d %H:%M:%S")
   # Convert to centimeters
@@ -74,7 +75,7 @@ for (j in 1:dim(gages)[1]) {
   if (is.infinite(range[1]) | is.infinite(range[2])) range <- c(-1, 1)
   # Main title
   main <- ifelse(gages$edenmaster_new[j] == 1, paste(gages$station_name_web[j], "(surfacing)"), paste(gages$station_name_web[j], "(non-surfacing)"))
-  jpeg(filename = paste0(dir, "/surf_edendb_graphs/", gages$station_name_web[j], ".jpg"), width = 1200, height = 800, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./surf_edendb_graphs/", gages$station_name_web[j], ".jpg"), width = 1200, height = 800, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
   par(mar = c(5, 4, 4, 5) + .1)
   plot(db$datetime, db$stage, type = "l", ylim = range, main = main, xlab = "Date", ylab = "Water level (cm NAVD88)")
   points(db$datetime, db$wl, col = "blue")
@@ -87,7 +88,7 @@ for (j in 1:dim(gages)[1]) {
   }
   legend("topleft", c("EDENdb hourly values", "EDEN WL surface", "EDEN depth surface"), col = c("black", "blue", "darkblue"), lty = c(1, 0, 0), pch = c(NA, 1, 16))
   dev.off()
-  jpeg(filename = paste0(dir, "/surf_edendb_thumbs/", gages$station_name_web[j], ".jpg"), width = 240, height = 160, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
+  jpeg(paste0("./surf_edendb_thumbs/", gages$station_name_web[j], ".jpg"), width = 240, height = 160, units = "px", pointsize = 12, quality = 100, bg = "white", type = "quartz")
   par(mar = c(0, 0, 0, 0))
   plot(db$datetime, db$stage, type = "l", ylim = range)
   points(db$datetime, db$wl, col = "blue")
@@ -105,10 +106,12 @@ r1[2] <- ceiling(r1[2])
 r2 <- range(depth, na.rm = T)
 r2[1] <- floor(r2[1])
 r2[2] <- ceiling(r2[2])
+print(r1)
+print(r2)
 
 # Plot WL and depth PNGs with 3cm contours
 for (i in 1:length(time)) {
-  png(filename = paste0(dir, "/wl_contours/", format(time[i], "%Y%m%d"), "_wl.png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
+  png(paste0("./wl_contours/day", sprintf("%04d", i - 1), ".png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
   par(mar = c(0, 0, 0, 0))
   image(x, y, stage[, , i], col = stage.col, breaks = seq(r1[1], r1[2], length.out = 82), axes = F, asp = 1, xlab = "", ylab = "")
   text(x[1], y[10], as.Date(time[i]), pos = 4)
@@ -116,7 +119,7 @@ for (i in 1:length(time)) {
   contour(x, y, stage[, , i], levels = seq(r1[1], r1[2], by = 3), lwd = c(1, 0.5), add = T)
   dev.off()
 
-  png(filename=paste0(dir, "/depth_contours/", format(time[i], "%Y%m%d"), "_depth.png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
+  png(paste0("./depth_contours/day", sprintf("%04d", i - 1), ".png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
   par(mar = c(0, 0, 0, 0))
   image(x, y, depth[, , i], col = depth.col, breaks = seq(r2[1], r2[2], length.out = 82), axes = F, asp = 1, xlab = "", ylab = "")
   text(x[1], y[10], as.Date(time[i]), pos = 4)

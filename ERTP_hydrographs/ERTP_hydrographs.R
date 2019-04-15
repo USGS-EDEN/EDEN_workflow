@@ -21,7 +21,7 @@ source ("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
 gages <- dbGetQuery(con, "select station_name_web, convert_to_navd88_feet as conv, vertical_conversion, average_elevation from station, station_datum, station_vegetation where station.station_id = station_datum.station_id and station.station_id = station_vegetation.station_id and station_vegetation.community_level_id = 1 and ertp_ge_flag is not null and edenmaster_end = 'curren' group by station_name_web")
-# add gages with no aberage_elevation
+# add gages with no average_elevation
 gages2 <- dbGetQuery(con, "select station_name_web, convert_to_navd88_feet as conv, vertical_conversion from station, station_datum where station.station_id = station_datum.station_id and (station_name_web = 'EPSW' or station_name_web = 'NCL' or station_name_web = 'NMP' or station_name_web = 'SPARO' or station_name_web like 'S12%' or station_name_web = 'G-1502' or station_name_web like 'S332%' or station_name_web like 'S175%' or station_name_web = 'S18C_T')")
 gages2$average_elevation <- NA
 gages <- rbind(gages, gages2)
@@ -258,8 +258,8 @@ write(hw, "./output/mail_HW.txt")
 write(lw, "./output/mail_LW.txt")
 
 ### System level commands may not work if local environment does not have sendmail installed!!
-to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov, Daniel.B.Hughes@usace.army.mil, barry.n.baxter@noaa.gov, Grady.H.Caulk@usace.army.mil, DavidW@miccosukeetribe.com, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
+to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov, Daniel.B.Hughes@usace.army.mil, barry.n.baxter@noaa.gov, Grady.H.Caulk@usace.army.mil, DavidW@miccosukeetribe.com, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil"
 system(paste0("/usr/sbin/sendmail -f 'EDEN Water Level Alert <bmccloskey@usgs.gov>' ", to, " < ./output/mail_HW.txt"))
-to <- "bmccloskey@usgs.gov, barry.n.baxter@noaa.gov, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil, Jenna.C.May@usace.army.mil"
+to <- "bmccloskey@usgs.gov, barry.n.baxter@noaa.gov, ricksanda@gmail.com, Meredith.A.Moreno@usace.army.mil"
 system(paste0("/usr/sbin/sendmail -f 'EDEN Water Level Alert <bmccloskey@usgs.gov>' ", to, " < ./output/mail_LW.txt"))
 setwd("..")

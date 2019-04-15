@@ -37,9 +37,11 @@ print(tail(z))
 print(range(range))
 print(unique(z$site))
 print(unique(z$flag))
-url <- paste0("https://sofia.usgs.gov/eden/eve/index.php?day_hour=hourly&timeseries_start=", as.Date(first) - 1, "&timeseries_end=", as.Date(last) + 2)
-for (i in 1:length(unique(z$site))) url <- paste0(url, "&site_list%5B%5D=", unique(z$site)[i])
-print(url)
+for (j in 1:(length(unique(z$site)) %/% 5 + 1)) {
+  url <- paste0("https://sofia.usgs.gov/eden/eve/index.php?day_hour=hourly&timeseries_start=", as.Date(first) - 1, "&timeseries_end=", as.Date(last) + 2)
+  for (i in 1:5) if (!is.na(unique(z$site)[(j - 1) * 5 + i])) url <- paste0(url, "&site_list%5B%5D=", unique(z$site)[(j - 1) * 5 + i])
+  print(url)
+}
 
 # Upload matrix to EDENdb
 for (i in 1:dim(z)[1]) {
