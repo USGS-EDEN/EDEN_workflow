@@ -54,7 +54,7 @@ for (i in 1:length(file_surf)) {
     image(x, y, depth[, , j], col = col, breaks = brks, axes = F, asp = 1)
     text(x[1], y[10], time[j], pos = 4)
     dev.off()
-    err <- try(ftpUpload(paste0("./images/depth_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_", format(time[j], '%Y'), "/", f)))
+    err <- try(ftpUpload(paste0("./images/depth_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_", format(time[j], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
   }
 }
 
@@ -80,6 +80,6 @@ for (j in 1:(length(time) - 14)) {
   image(x, y, rr[, , j], col = col, breaks = brks2, axes = F, asp = 1)
   text(x[1], y[10], time[j], pos = 4)
   dev.off()
-  err <- try(ftpUpload(paste0("./images/rr_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/rr/rr_", format(time[j], '%Y'), "/", f)))
+  err <- try(ftpUpload(paste0("./images/rr_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/rr/rr_", format(time[j], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
 }
 setwd("..")

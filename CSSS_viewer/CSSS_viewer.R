@@ -146,7 +146,7 @@ yr <- as.Date(format(Sys.Date(), "%Y-01-01")) - 1
 yr <- c(as.Date(format(yr, "%Y-01-01")), yr)
 doy <- as.POSIXlt(Sys.Date() - 1)$yday
 w_yr <- if (doy < 305) format(yr[1], "%Y") else as.numeric(format(yr[1], "%Y")) + 1
-d_yr <- if (doy < 121) as.numeric(format(yr[1], "%Y")) else format(yr[1], "%Y")
+d_yr <- if (doy < 121) as.numeric(format(yr[1], "%Y")) - 1 else format(yr[1], "%Y")
 wet <- c(as.Date(paste0(w_yr, "-05-01")), as.Date(paste0(w_yr, "-10-31")))
 dry <- c(as.Date(paste0(d_yr, "-11-01")), as.Date(paste0(as.numeric(d_yr) + 1, "-04-30")))
 mon <- as.Date(format(Sys.Date(), "%Y-%m-01")) - 1
@@ -234,11 +234,11 @@ for (i in 1:length(time)) {
   text(x[1], y[10], time[i], pos = 4)
   #points(x[c(1, 1, 287, 287)], y[c(1, 405, 1, 405)], pch = 16) #positioning markers for Leaflet map
   dev.off()
-  err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "/", f)))
+  err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
   if (as.POSIXlt(time[i])$yday >= 59 & as.POSIXlt(time[i])$yday <= 195) { #leapyear tweak undone
     f2 <- paste0(sprintf("trans%04d", as.POSIXlt(time[i])$yday - 59), ".png")
     file.copy(paste0("./images/", format(time[i], '%Y'), "/", f), paste0("./images/", format(time[i],'%Y'), "_nest/", f2), overwrite = T)
-    err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "_nest/", f2), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "_nest/", f2)))
+    err <- try (ftpUpload(paste0("./images/", format(time[i], '%Y'), "_nest/", f2), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/images/", format(time[i], '%Y'), "_nest/", f2), .opts = list(forbid.reuse = 1)))
   }
 }
 

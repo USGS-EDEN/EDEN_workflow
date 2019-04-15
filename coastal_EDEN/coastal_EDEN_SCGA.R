@@ -67,12 +67,15 @@ v[, 2:dim(v)[2]] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 
 
 # Upload data.frame to CoastalEDENdb
 for (i in 1:dim(v)[1]) {
-  ### Caution! 'replace' erases non-specified columns!! Use 'update' if modifying subsets of columns
-  query <- paste0("replace into coastal_sc_ga set date='", v$datetime[i], "'")
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from coastal_sc_ga where date = '", range[i], "'"))
+  in_up <- if (date_check$ct == 1) "update" else "insert into"
+  query <- paste0(in_up, " coastal_sc_ga set date='", v$datetime[i], "'")
   for (j in 2:dim(v)[2]) {
     if (is.na(v[i, j])) tmp <- "NULL" else tmp <- v[i, j]
     query <- paste0(query, ", ", names(v)[j], "_salinity = ", tmp)
   }
+  if (date_check$ct == 1)
+    query <- paste0(query, " where date = '", range[i], "'")
   # Upload timestamp row to database
   err <- try(dbSendQuery(con, query), T)
   if (inherits(err, "try-error")) report <- paste0(report, "\nCoastalEDENdb upload error for ", v$datetime[i], ": ", err)
@@ -108,9 +111,9 @@ for (i in 1:dim(gages)[1]) {
   text(db3$date[last_meas], db3$sal[last_meas], round(db3$sal[last_meas], 2), pos = 4, cex = 1.25, font = 2, col = "green3", offset = 1)
   legend("topleft", c(paste(as.numeric(format(Sys.Date(), "%Y")) - 3, "-", format(Sys.Date(), "%Y"), gages$NWIS_ID[i], "salinity"), "Rolling seven-day average salinity"), col = c("black", "green"), lty = 1, lwd = 3)
   dev.off()
-  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], "thumb.jpg")))
+  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], "thumb.jpg"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[i], " thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[i], " thumbnail transferred")
-  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], ".jpg")))
+  err <- try (ftpUpload(paste0("./images/", gages$NWIS_ID[i], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_7day/", gages$NWIS_ID[i], ".jpg"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[i], " full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[i], " full-sized transferred")
 }
 
@@ -142,14 +145,14 @@ for (i in 1:dim(csi)[1]) {
   }
 }
 for (j in 1:dim(gages)[1]) {
-  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png")))
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
-  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], ".png")))
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], ".png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI full-sized transferred")
-  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/", gages$NWIS_ID[j], ".csv")))
+  err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/", gages$NWIS_ID[j], ".csv"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI values NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI values transferred")
   for (i in 1:24) {
-    err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_interval", i, ".png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_plot/", gages$NWIS_ID[j], "_interval", i, ".png")))
+    err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_interval", i, ".png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_plot/", gages$NWIS_ID[j], "_interval", i, ".png"), .opts = list(forbid.reuse = 1)))
     if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " transferred")
   }
 }
@@ -193,8 +196,8 @@ for (j in 1:length(gages$NWIS_ID)) {
   legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Historic monthly mean salinity"), lwd = c(5, 4, 4), col = c("black", "grey", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
-  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], "thumb.jpg"))
-  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], ".jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], "thumb.jpg"), .opts = list(forbid.reuse = 1))
+  ftpUpload(paste0("./duration_hydrographs/", gages$NWIS_ID[j], ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/salinity_30day/", gages$NWIS_ID[j], ".jpg"), .opts = list(forbid.reuse = 1))
 }
 
 query <- "select date"

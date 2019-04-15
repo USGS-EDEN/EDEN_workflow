@@ -124,6 +124,7 @@ text <- "# TIME SERIES RECORD
 #  "
 # Loop by agency, generate daily median input files
 for (i in 1:length(unique(gages$agency))) {
+  print(unique(gages$agency)[i])
   agency <- unique(gages$agency)[i]
   lagency <- tolower(agency)
   # Initialize columns
@@ -141,6 +142,7 @@ for (i in 1:length(unique(gages$agency))) {
 	report <- paste0(report, "\nSurfacing gages with M-flagged missing ", agency, " data points in EDENdb for date of interest (", dt[4] ,"): ")
 	# Loop by date, build files
 	for (j in 1:length(dt)) {
+	  print(dt[j])
 		write.table(text, paste0("./", lagency, "/", lagency, "_", format(dt[j] + 1, "%Y%m%d")), quote = F, row.names = F, col.names = F)
 	  # Matrix of values
 		mat <- matrix(nrow = 25, ncol = length(head))
@@ -166,7 +168,7 @@ for (i in 1:length(unique(gages$agency))) {
 		err <- try (write.table(mat, file, sep = "\t", quote = F, row.names = F, col.names = T, append = T), T)
 		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT generated for ", dt[j]) else paste0(report, "\n", agency, " daily median input file generated for ", dt[j])
 		# Transfer file to eFTP
-		err <- try (ftpUpload(file, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/realtime_v2_test/", f)))
+		err <- try (ftpUpload(file, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/realtime_v2_test/", f), .opts = list(forbid.reuse = 1)))
 		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT transferred for ", dt[j]) else paste0(report, "\n", agency, " daily median input file transferred for ", dt[j])
 	}
 }
@@ -192,7 +194,7 @@ for (j in 1:length(dt)) {
   }
   if (fail == 0) report <- paste0(report, "\n\nAnnotated daily median file generated for ", dt[j])
   # Transfer file to eFTP
-  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt")))
+  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), .opts = list(forbid.reuse = 1)))
   report <- if (inherits(err, "try-error")) paste0(report, "\nAnnotated daily median file NOT transferred for ", dt[j]) else paste0(report, "\nAnnotated daily median file transferred for ", dt[j])
 }
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))

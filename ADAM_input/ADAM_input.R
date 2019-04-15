@@ -169,7 +169,7 @@ sfwmd <- NULL
 # Loop through days
 for (i in 4:0) {
   sfwmd_file <- NULL
-  ## For local files, download manually to ./enp and uncomment to following:
+  ## For local files, download manually to ./sfwmd and uncomment to following:
   # sfwmd_file <- list.files("./sfwmd", paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]")); err <- err2 <- 1
   
   ## By default, download remote files (comment out next two lines to use local files)

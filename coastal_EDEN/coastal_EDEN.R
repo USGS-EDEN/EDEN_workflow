@@ -116,9 +116,9 @@ for (i in 1:dim(params)[1]) {
   text(db3$date[last_meas], db3$avg[last_meas], round(db3$avg[last_meas], 2), pos = 4, cex = 1.25, font = 2, col = "green3", offset = 1)
   legend("topleft", c(paste(as.numeric(format(Sys.Date(), "%Y")) - 3, "/", format(Sys.Date(), "%Y"), tmp[length(tmp)]), "Rolling seven-day average"), col = c("black", "green"), lty = 1, lwd = 3)
   dev.off()
-  err <- try (ftpUpload(paste0("./images/", params$column[i], "_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/thumbnails/", params$column[i], "_thumb.jpg")))
+  err <- try (ftpUpload(paste0("./images/", params$column[i], "_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/thumbnails/", params$column[i], "_thumb.jpg"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", params$column[i], " thumbnail NOT transferred") else report <- paste0(report, "\n", params$column[i], " thumbnail transferred")
-  err <- try (ftpUpload(paste0("./images/", params$column[i], "_full.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/full/", params$column[i], "_full.jpg")))
+  err <- try (ftpUpload(paste0("./images/", params$column[i], "_full.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/full/", params$column[i], "_full.jpg"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", params$column[i], " full-size NOT transferred") else report <- paste0(report, "\n", params$column[i], " full-sized transferred")
 }
 
@@ -132,9 +132,9 @@ sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F)
 for (j in 1:dim(db)[1]) {
-  err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked_thumb.png")))
+  err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked_thumb.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail transferred")
-  err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked.png")))
+  err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI full-sized transferred")
 }
 
@@ -181,8 +181,8 @@ for (j in 1:length(db$station_name_web)) {
   legend("topright", c("Salinity 30 day moving window", "Daily salinity values", "Daily temperature values", "Historic monthly mean salinity"), lwd = c(5, 4, 4, 4), col = c("black", "grey", "red", "yellow"), inset = c(.075, 0), cex = 1.5, bty = "n")
   legend("topleft", paste("Period of record:", rng$start, "to", rng$end), cex = 1.5, bty = "n")
   dev.off()
-  ftpUpload(paste0("./duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/salinity_duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"))
-  ftpUpload(paste0("./duration_hydrographs/", db$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/salinity_duration_hydrographs/", db$station_name_web[j], "_salinity.jpg"))
+  ftpUpload(paste0("./duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/salinity_duration_hydrographs/", db$station_name_web[j], "_salinity_thumb.jpg"), .opts = list(forbid.reuse = 1))
+  ftpUpload(paste0("./duration_hydrographs/", db$station_name_web[j], "_salinity.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/salinity_duration_hydrographs/", db$station_name_web[j], "_salinity.jpg"), .opts = list(forbid.reuse = 1))
 }
 
 ### System level commands may not work if local environment does not have sendmail installed!!
