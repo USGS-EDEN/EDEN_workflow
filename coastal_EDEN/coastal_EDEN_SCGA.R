@@ -23,63 +23,69 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", hos
 gages <- read.csv("./SCGA_salinity_gages.csv", colClasses = c("character", "character", "numeric", "numeric"))
 days <- c(Sys.Date() - 14, Sys.Date() - 1)
 range <- seq.Date(days[1], days[2], "day")
-v <- data.frame(datetime = range)
 
 # Retrieve data and build input data.frame
 report <- ""
-for (i in 1:length(gages$NWIS_ID)) {
-  print(gages$NWIS_ID[i])
-  # Generate AQUARIUS URLs; add 1 for DST end timestamps
-  url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$NWIS_ID[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=00095&statCd=00003&access=3")
-  tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
-  if (inherits(tmp, "try-error")) {
-    report <- paste0(report, "Data _NOT_ downloaded for ", gages$NWIS_ID[i], "\n")
-  } else {
-    # Remove data descriptor header row
-    tmp <- tmp[2:dim(tmp)[1], ]
-    # Remove rows with "_Eqp" flag
-    if (any(apply(tmp, 1, function (x) any(grepl("_Eqp", x)))))
-      tmp <- tmp[-which(apply(tmp, 1, function (x) any(grepl("_Eqp", x)))), ]
-    # URLs with no returned data
-    if (tmp[, 1] == "") {
-      report <- paste0(report, gages$NWIS_ID[i], " missing\n")
+for (j in c("salinity", "temperature", "stage")) {
+  v <- data.frame(datetime = range)
+  for (i in 1:length(gages$NWIS_ID)) {
+    print(paste(gages$NWIS_ID[i], j))
+    cd <- if (j == "salinity") "00095" else if (j == "temperature") "00010" else "00065"
+    # Generate AQUARIUS URLs; add 1 for DST end timestamps
+    url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$NWIS_ID[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=", cd, "&statCd=00003&access=3")
+    tmp <- try (read.table(url, header = T, sep = "\t", colClasses = "character"))
+    if (inherits(tmp, "try-error")) {
+      report <- paste0(report, j, " data _NOT_ downloaded for ", gages$NWIS_ID[i], "\n")
     } else {
-      # Convert timestamps; shift DST
-      tmp$datetime <- as.Date(tmp$datetime, format = "%Y-%m-%d")
-      tmp <- tmp[tmp$datetime %in% range, ]
-      # Find the column that contains the data
-      dd_col <- ifelse(dim(tmp)[2] > 5, 6, 4)
-      tmp <- tmp[tmp[, dd_col] != "", ]
-      v <- cbind(v, merge(range, tmp, by.x = 1, by.y = "datetime", all.x = T)[, dd_col])
-      names(v)[dim(v)[2]] <- gages$NWIS_ID[i]
+      # Remove data descriptor header row
+      tmp <- tmp[2:dim(tmp)[1], ]
+      # Remove rows with "_Eqp" or "_Mnt" flags
+      if (any(apply(tmp, 1, function (x) any(grepl("_Eqp|_Mnt", x)))))
+        tmp <- tmp[-which(apply(tmp, 1, function (x) any(grepl("_Eqp|_Mnt", x)))), ]
+      # URLs with no returned data
+      if (tmp[, 1] == "") {
+        report <- paste0(report, gages$NWIS_ID[i], " ", j, " missing\n")
+      } else {
+        # Convert timestamps; shift DST
+        tmp$datetime <- as.Date(tmp$datetime, format = "%Y-%m-%d")
+        tmp <- tmp[tmp$datetime %in% range, ]
+        # Find the column that contains the data
+        dd_col <- ifelse(dim(tmp)[2] > 5, 6, 4)
+        tmp <- tmp[tmp[, dd_col] != "", ]
+  
+        v <- cbind(v, merge(range, tmp, by.x = 1, by.y = "datetime", all.x = T)[, dd_col])
+        names(v)[dim(v)[2]] <- paste0(gages$NWIS_ID[i], "_", j)
+      }
     }
   }
-}
-for (i in 2:dim(v)[2]) v[, i] <- as.numeric(as.character(v[, i]))
-k1 <- 0.0120    # Wagner et al., 2006
-k2 <- -0.2174
-k3 <- 25.3283
-k4 <- 13.7714
-k5 <- -6.4788
-k6 <- 2.5842
-r <- v[, 2:dim(v)[2]] / 53087
-v[, 2:dim(v)[2]] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
-
-# Upload data.frame to CoastalEDENdb
-for (i in 1:dim(v)[1]) {
-  date_check <- dbGetQuery(con, paste0("select count(date) as ct from coastal_sc_ga where date = '", range[i], "'"))
-  in_up <- if (date_check$ct == 1) "update" else "insert into"
-  query <- paste0(in_up, " coastal_sc_ga set date='", v$datetime[i], "'")
-  for (j in 2:dim(v)[2]) {
-    if (is.na(v[i, j])) tmp <- "NULL" else tmp <- v[i, j]
-    query <- paste0(query, ", ", names(v)[j], "_salinity = ", tmp)
+  if (j == "salinity") {
+    for (i in 2:dim(v)[2]) v[, i] <- as.numeric(as.character(v[, i]))
+    k1 <- 0.0120    # Wagner et al., 2006
+    k2 <- -0.2174
+    k3 <- 25.3283
+    k4 <- 13.7714
+    k5 <- -6.4788
+    k6 <- 2.5842
+    r <- v[, 2:dim(v)[2]] / 53087
+    v[, 2:dim(v)[2]] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
   }
-  if (date_check$ct == 1)
-    query <- paste0(query, " where date = '", range[i], "'")
-  # Upload timestamp row to database
-  err <- try(dbSendQuery(con, query), T)
-  if (inherits(err, "try-error")) report <- paste0(report, "\nCoastalEDENdb upload error for ", v$datetime[i], ": ", err)
-} # End process and upload
+
+  # Upload data.frame to CoastalEDENdb
+  for (i in 1:dim(v)[1]) {
+    date_check <- dbGetQuery(con, paste0("select count(date) as ct from coastal_sc_ga where date = '", range[i], "'"))
+    in_up <- if (date_check$ct == 1) "update" else "insert into"
+    query <- paste0(in_up, " coastal_sc_ga set date='", v$datetime[i], "'")
+    for (j in 2:dim(v)[2]) {
+      if (is.na(v[i, j])) tmp <- "NULL" else tmp <- v[i, j]
+      query <- paste0(query, ", ", names(v)[j], " = ", tmp)
+    }
+    if (date_check$ct == 1)
+      query <- paste0(query, " where date = '", range[i], "'")
+    # Upload timestamp row to database
+    err <- try(dbSendQuery(con, query), T)
+    if (inherits(err, "try-error")) report <- paste0(report, "\nCoastalEDENdb upload error for ", v$datetime[i], ": ", err)
+  } # End process and upload
+}
 
 # Create year+ plots of parameters, and thumbnails
 for (i in 1:dim(gages)[1]) {
@@ -122,7 +128,7 @@ for (j in 1:dim(gages)[1])
   query <- paste0(query, ", avg(", gages$NWIS_ID[j], "_salinity) as `", gages$NWIS_ID[j], "`")
 query <- paste(query, "from coastal_sc_ga group by Year, Month")
 sal <- dbGetQuery(con, query)
-sal$`021720698`[1:168] <- NA  # start 021720698 in 04/1997
+sal$`021720698`[1:169] <- NA  # start 021720698 in 05/1997
 sal$`02110760`[1:130] <- NA   # start 02110760 in 02/1994
 sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
