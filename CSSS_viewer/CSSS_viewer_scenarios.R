@@ -1,12 +1,8 @@
 library (ncdf4)
 try (setwd("./CSSS_viewer"), silent = T)
 
-#fls <- list.files("./input/", "^depth_COP_Round1_PM_")
-#sc <- paste0("COP", substr(fls, 20, 24))
-#sc[4] <- paste0(sc[4], "9R")
-fls <- list.files("./input/", "^depth_W[3A]")
-sc <- substr(fls, 7, 11)
-sc[2:3] <- paste0(sc[2:3], "R")
+fls <- list.files("./input/", "^depth_")[c(2, 3, 8)]
+sc <- c("ALTN2", "ALTO", "ECB19RR")
 s.nc <- nc_open(paste0("./input/", fls[1]))
 x <- ncvar_get(s.nc, "x")
 y <- ncvar_get(s.nc, "y")
@@ -57,7 +53,7 @@ for (i in 1:length(fls)) {
     assign(paste0("dry_", sub[j], "_", sc[i]), ifelse(get(paste0("depth_", sub[j], "_", sc[i])) <= 0, 1, 0)) # dry == 1
   }
   nc_close(s.nc)
-
+  
   # Build statistics data.frame
   df <- data.frame(date = as.Date(time))
   for (j in 1:length(sub)) {
@@ -80,7 +76,7 @@ for (i in 1:length(fls)) {
       df[k, paste0("depth_sd_", sub[j], "_", sc[i])] <- round(sd(get(paste0("depth_", sub[j], "_", sc[i]))[, , k], na.rm = T), 1)
     }
   }
-
+  
   # Stats por .js
   write(paste0("var stats_", sc[i], " = {"), paste0("./output/por_stats_", sc[i], ".js"))
   for (j in 1:length(df$date)) {
@@ -90,13 +86,13 @@ for (i in 1:length(fls)) {
     write(line, paste0("./output/por_stats_", sc[i], ".js"), append = T)
   }
   write("}", paste0("./output/por_stats_", sc[i], ".js"), append = T)
-
+  
   # Stats por .csv
   tmp <- rbind(paste("area", sub, "% dry"), paste("area", sub, "% WD <= 17cm"), paste("area", sub, "% dry >= 40 days"), paste("area", sub, "% dry >= 90 days"), paste("mean cm water depth area", sub), paste("water depth standard deviation cm area", sub))
   cols <- c("Date", tmp)
   write.table(df, paste0("./output/CSSS_subarea_stats_", sc[i], ".csv"), quote = F, sep = ",", row.names = F, col.names = cols)
   zip(paste0("./output/CSSS_subarea_stats_", sc[i], ".csv.zip"), paste0("./output/CSSS_subarea_stats_", sc[i], ".csv"), "-j9X")
-
+  
   # Generate depth surface images
   col <- c("deepskyblue", "steelblue", "blue3", "blue4")
   s.nc <- nc_open(paste0("./input/", fls[i]))
@@ -152,7 +148,7 @@ for (m in 1:length(fls)) {
     }
     year[, paste0("four_hyd_sd_", su)] <- NA # Initialize SD column
   }
-
+  
   h4 <- array(NA, c(dim(grid_sub)[1], dim(grid_sub)[2], length(year$year) - 3))
   for (i in (length(year$year) - 3):1) {
     print(year$year[i] + 4)
