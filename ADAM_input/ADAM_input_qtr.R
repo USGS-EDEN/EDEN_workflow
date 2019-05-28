@@ -42,7 +42,7 @@ yr <- format(Sys.Date(), "%Y")
 outfile <- paste0("./output/data_uv_", yr, qtr, ".txt")
 write(header, outfile)
 # Manually calculate first and last day of quarter
-days <- c(as.Date("2018-10-01"), as.Date("2018-12-31"))
+days <- c(as.Date("2019-01-01"), as.Date("2019-03-31"))
 # range: include all of final day for quarterly/annual
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
 end <- strptime(paste(days[2], "23:54:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -89,7 +89,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
 report <- paste0(report, "USGS gages with ", days[1], " values: ", cnt, ".\n")
 
 # Enter filenames to download quarterly/annual file to local working directory
-enp_file <- "enp_20190221_1057"
+enp_file <- "enp_20190516_0725"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
   report <- paste0(report, "ENP quarterly input file _NOT_ downloaded.\n")
@@ -123,7 +123,7 @@ for (i in which(db$operating_agency_id == 1))
 # Report first day of quarter's ENP gage count
 report <- paste0(report, "ENP gages with ", days[1], " values: ", length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == days[1])), ".\n")
 
-sfwmd_file <- "sfwmd_qtr_20190215_0621"
+sfwmd_file <- "sfwmd_qtr_20190515_0624"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
   report <- paste0(report, "SFWMD quarterly input file _NOT_ downloaded.\n")
@@ -164,9 +164,9 @@ err <- try(system(paste0("curl -T ", outfile, " ftp://ftpint.usgs.gov/private/no
 report <- if (inherits(err, "try-error")) paste0(report, "\n", outfile, " file NOT transferred") else paste0(report, "\n", outfile, " file transferred")
 zip(paste0(outfile, ".zip"), outfile)
 
-system(paste0("(echo 'Subject: ", outfile, " upload report
-", report, "';uuencode ", outfile, ".zip ", outfile, ".zip) | /usr/sbin/sendmail bmccloskey@usgs.gov,mdpetkew@usgs.gov,matthews@usgs.gov,jmclark@usgs.gov,wbguimar@usgs.gov,dantolin@usgs.gov"))
-err <- try(write(report, paste0( "./reports/report_qtr_", format(Sys.Date(), "%Y%m%d"), ".txt")), silent = T)
+to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov, kjconlon@usgs.gov"
+system(paste0("(echo 'Subject: ", outfile, " upload report\n
+", report, "';uuencode ", outfile, ".zip ", outfile, ".zip;uuencode ./reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))
 
 gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, param, ts_id, vertical_datum_id from station where edenmaster_new = 1 group by station_name order by station_name_web")
 usgs_gages <- gages[gages$operating_agency_id == 4, ]
@@ -218,8 +218,10 @@ for (i in 1:length(enp_gages$station_name_web)) {
   if (enp_gages$vertical_datum_id[i] == 3) conv$conv <- 0
   enp_pre <- dbGetQuery(con, paste0("select datetime, `stage_", enp_gages$station_name_web[i], "` as st from stage where datetime = '", range[1] - 3600, "'"))
   enp_pre <- data.frame("ENP", enp_gages$station_name_web[i], range[1] - 3600, enp_pre$st)
-  enp_s <- data.frame("ENP", enp_gages$station_name_web[i], range[1], as.numeric(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[1])]) + conv$conv)
-  write.table(enp_pre, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  if (length(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[1])])) {
+    enp_s <- data.frame("ENP", enp_gages$station_name_web[i], range[1], as.numeric(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[1])]) + conv$conv)
+    write.table(enp_pre, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
+  }
   write.table(enp_s, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
   enp_post <- dbGetQuery(con, paste0("select datetime, `stage_", enp_gages$station_name_web[i], "` as st from stage where datetime = '", range[length(range)] + 3600, "'"))
   enp_post <- data.frame("ENP", enp_gages$station_name_web[i], range[length(range)] + 3600, enp_post$st)

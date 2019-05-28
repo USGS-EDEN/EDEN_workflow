@@ -14,6 +14,9 @@ print("These libraries must be installed: RMySQL, RCurl")
 library (RMySQL)
 library (RCurl)
 
+# set number of days here to upload:
+days <- 4
+
 try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database and download data file
@@ -37,14 +40,14 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
   # Remove non-hourly
   z <- z[z$date_tm %in% range, ]
   # Retain all timestamps from within last four days
-  z <- z[which(as.Date(z$date_tm, "EST") >= as.Date(Sys.Date() - 4)), ]
+  z <- z[which(as.Date(z$date_tm, "EST") >= as.Date(Sys.Date() - days)), ]
   # Timestamps present in file
   timestamp <- sort(unique(z$date_tm))
 
   # Check exptected date of first timestamp
-  report <- if (as.Date(timestamp[1]) == Sys.Date() - 4) {
-    paste("Expected first timestamp date of", Sys.Date() - 4, "confirmed\n\n")
-  } else paste0("***WARNING*** First timestamp of file is not expected date of ", Sys.Date() - 4, "\n\n")
+  report <- if (as.Date(timestamp[1]) == Sys.Date() - days) {
+    paste("Expected first timestamp date of", Sys.Date() - days, "confirmed\n\n")
+  } else paste0("***WARNING*** First timestamp of file is not expected date of ", Sys.Date() - days, "\n\n")
   # Report first and last timestamp, number of reviewed values
   report <- paste0(report, "ISOutput_Run.txt input file beginning timestamp: ", timestamp[1], "\n")
   report <- paste0(report, "ISOutput_Run.txt input file ending timestamp: ", timestamp[length(timestamp)], "\n")
@@ -61,7 +64,7 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
   	tmp <- dim(z[which(z$station_name_web == stations[i] & as.Date(z$date_tm, tz = "EST") < Sys.Date()), ])[1]
   	# Number of timestamps with no Reviewed or Preliminary values
   	tmp2 <- dim(z[which(z$station_name_web == stations[i] & is.na(z$RevValue) & is.na(z$PrelimValue) & as.Date(z$date_tm, tz = "EST") < Sys.Date()), ])[1]
-  	if (tmp != 96) report <- paste0(report, stations[i], ": ", tmp, " timestamps present before ", Sys.Date(), "\n")
+  	if (tmp != days * 24) report <- paste0(report, stations[i], ": ", tmp, " timestamps present before ", Sys.Date(), "\n")
   	if (tmp2 != 0) report <- paste0(report, stations[i], ": ", tmp2, " missing data values before ", Sys.Date()," (no reviewed, actual, or preliminary values)\n")
   	# Build vector of stage and flag columns
   	names[i * 2] <- paste0("stage_", stations[i])
@@ -113,6 +116,19 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
   	if (inherits(err, "try-error")) report <- paste0(report, "\nEDENdb upload error for ", v$datetime[i], ": ", err)
   }
 } # End process and upload
+
+## Plot data for review
+#for (i in seq(2, dim(v)[2], 2)) {
+#  g <- dbGetQuery(con, paste0("select datetime, `", names[i], "` as st from stage where datetime >= '", timestamp[1] - 3600, "' and datetime <= '", rev(timestamp)[1] + 7200, "' order by datetime"))
+#  g$datetime <- as.POSIXct(g$datetime, tz = "EST", format = "%Y-%m-%d %H:%M")
+#  pts <- c(1, 2, length(g$datetime) - 2, length(g$datetime) - 1, length(g$datetime))
+#  g1 <- data.frame(names[i], g$datetime[pts], g$st[pts])
+#  write.table(g1, "./pdf/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
+#  pdf(paste0("./pdf/", names[i], ".pdf"), 14, 7)
+#  plot(g$datetime, g$st, type="l", main = names[i], ylab="ft.")
+#  points(g$datetime[pts], g$st[pts], pch=16, col="blue")
+#  dev.off()
+#}
 
 ## Generate daily median input files & annotated daily median file
 # Change ENP agency name

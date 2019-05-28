@@ -52,6 +52,8 @@
 !*/rainfall/.gitkeep
 */table/*
 !*/table/.gitkeep
+*/pdf/*
+!*/pdf/.gitkeep
 data_uv*
 admin_pwd.R
 usr_pwd.R

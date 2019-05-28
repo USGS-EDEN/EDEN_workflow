@@ -128,7 +128,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$station_name_web[j], "_salinity`) as `", db$station_name_web[j], "`")
 query <- paste(query, "from coastal group by Year, Month")
 sal <- dbGetQuery(con, query)
-sal <- CSIinterp(sal)
+#sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F)
 for (j in 1:dim(db)[1]) {

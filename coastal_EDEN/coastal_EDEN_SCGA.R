@@ -132,9 +132,7 @@ for (j in 1:dim(gages)[1])
   query <- paste0(query, ", avg(", gages$NWIS_ID[j], "_salinity) as `", gages$NWIS_ID[j], "`")
 query <- paste(query, "from coastal_sc_ga group by Year, Month")
 sal <- dbGetQuery(con, query)
-sal$`021720698`[1:169] <- NA  # start 021720698 in 05/1997
-sal$`02110760`[1:130] <- NA   # start 02110760 in 02/1994
-sal <- CSIinterp(sal)
+#sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F, "bottom")
 CSIplot(csi, "./csi", "bottom")
