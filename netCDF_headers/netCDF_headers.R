@@ -19,6 +19,7 @@ try (setwd("./netCDF_headers"), silent = T)
 # Clean up old files
 unlink("./surfaces/*.nc")
 # Calculate quarter for yesterday
+# Manually adjust subtracted days for other quarters
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
 
 ftp_dir <- "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/"

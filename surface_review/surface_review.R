@@ -6,7 +6,7 @@ library (ncdf4)
 library (RMySQL)
 library (abind)
 
-# Connect to database, list of gages for which to acquire data
+# Connect to database
 try (setwd("./surface_review"), silent = T)
 source ("../usr_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
@@ -19,6 +19,7 @@ depth.col <- c("#9ECAE1", "#9AC8E0", "#97C6DF", "#94C4DE", "#91C3DE", "#8EC1DD",
 time <- stage <- depth <- NULL
 
 # Place WL and depth .nc files to be reviewed in working directory
+### RUN netcdf_header.R ON QUARTERLY FILES TO FIX HEADERS
 file_surf <- list.files("./surfaces", "^[0-9]{4}_q[1-4].nc$")
 depth_surf <- list.files("./surfaces", "^d[0-9]{4}_q[1-4].nc$")
 
