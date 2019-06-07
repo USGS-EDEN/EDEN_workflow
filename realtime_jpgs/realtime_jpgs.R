@@ -84,3 +84,4 @@ par(mar=c(0,0,0,0))
 image(x,y,stage[,,i],zlim=c(-100,548),col=stage.col,xlab="",xaxt="n",ylab="",yaxt="n",frame.plot=F)
 dev.off()
 }
+setwd("..")

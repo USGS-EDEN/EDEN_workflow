@@ -32,3 +32,4 @@ for (i in 1:dim(gages)[1]) {
     dev.off()
   }
 }
+setwd("..")

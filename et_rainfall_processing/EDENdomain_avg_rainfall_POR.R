@@ -88,3 +88,4 @@ for (i in 1:length(rain_new)) {
   }
 }
 ftpUpload("./daily_average_rainfall-all_EDEN_pixels.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/daily_average_rainfall-all_EDEN_pixels.csv")
+setwd("..")

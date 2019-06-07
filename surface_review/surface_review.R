@@ -126,3 +126,4 @@ for (i in 1:length(time)) {
   contour(x, y, depth[, , i], levels = seq(r2[1], r2[2], by = 3), lwd = c(1, 0.5), add = T)
   dev.off()
 }
+setwd("..")

@@ -60,3 +60,4 @@ for (j in 1:length(m)) {
   }
 }
 ftpUpload(paste0("./daily_average_rainfall-all_EDEN_pixels", year, sprintf("%02d", month),".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/bmccloskey/daily_average_rainfall-all_EDEN_pixels", year, sprintf("%02d", month),".csv"))
+setwd("..")
