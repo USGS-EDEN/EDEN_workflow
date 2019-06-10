@@ -72,7 +72,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
     dd_col <- if (!is.na(usgs_gages$ts_id[i])) which(grepl(usgs_gages$ts_id[i], names(tmp)))[1] else which(grepl(usgs_gages$param[i], names(tmp)))[1]
     # Check for presence of correct TS ID
     if (is.na(dd_col)) { 
-      report <- paste0(report, "Gage ", usgs_gages$station_name_web[i], " missing TS ID\n")
+      report <- paste0(report, "USGS Gage ", usgs_gages$station_name_web[i], " missing TS ID\n")
     } else {
       # Convert timestamps; shift DST
       tmp$datetime <- as.POSIXct(tmp$datetime, "EST", format = "%Y-%m-%d %H:%M")
@@ -83,7 +83,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
         tmp <- tmp[-which(grepl("_Eqp|_Dry|_Fld", tmp[, dd_col])), ]
       # URLs with no returned data
       if (dim(tmp)[1] == 0 || tmp[, 1] == "") {
-        report <- paste0(report, "Gage ", usgs_gages$station_name_web[i], " missing\n")
+        report <- paste0(report, "USGS Gage ", usgs_gages$station_name_web[i], " missing\n")
       } else {
         # Check presence of yesterday's noon timestamp; add to count
         if (length(which(tmp$datetime == range[noon]))) if(tmp[which(tmp$datetime == range[noon]), dd_col] != "") cnt <- cnt + 1
@@ -151,10 +151,10 @@ for (i in 4:0) {
 # Report yesterday's ENP noon timestamp count
 report <- paste0(report, "ENP gages with ", range[noon], " values: ", length(unique(enp$V2[which(enp$date_tm == range[noon])])), ".\n")
 # Counts of gages with values each day for report
-tbl[2, 1] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == day1))
-tbl[2, 2] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == day2))
-tbl[2, 3] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == day3))
-tbl[2, 4] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == day4))
+tbl[2, 1] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 12 & as.Date(enp$date_tm) == day1))
+tbl[2, 2] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 12 & as.Date(enp$date_tm) == day2))
+tbl[2, 3] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 12 & as.Date(enp$date_tm) == day3))
+tbl[2, 4] <- length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 12 & as.Date(enp$date_tm) == day4))
 for (j in 1:length(enp_cnt)) enp_cnt[j] <- length(which(enp$date_tm == range2[j]))
 # Loop through expected ENP gages
 for (i in which(db$operating_agency_id == 1))
@@ -206,10 +206,10 @@ for (i in 4:0) {
 # Report yesterday's SFWMD noon timestamp count
 report <- paste0(report, "SFWMD gages with ", range[noon], " values: ", length(unique(sfwmd$V1[which(sfwmd$date_tm == range[noon])])), ".\n")
 # Counts of gages with values each day for report
-tbl[3, 1] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 0 & as.Date(sfwmd$date_tm) == day1))
-tbl[3, 2] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 0 & as.Date(sfwmd$date_tm) == day2))
-tbl[3, 3] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 0 & as.Date(sfwmd$date_tm) == day3))
-tbl[3, 4] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 0 & as.Date(sfwmd$date_tm) == day4))
+tbl[3, 1] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 12 & as.Date(sfwmd$date_tm) == day1))
+tbl[3, 2] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 12 & as.Date(sfwmd$date_tm) == day2))
+tbl[3, 3] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 12 & as.Date(sfwmd$date_tm) == day3))
+tbl[3, 4] <- length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 12 & as.Date(sfwmd$date_tm) == day4))
 for (j in 1:length(sfwmd_cnt)) sfwmd_cnt[j] <- length(which(sfwmd$date_tm == range2[j]))
 # Loop through expected SFWMD gages
 for (i in which(db$operating_agency_id == 2 | db$operating_agency_id == 3))
