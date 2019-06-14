@@ -13,15 +13,15 @@
 # US Geological Survey
 #--------------
 
-print("These libraries must be installed: geospt, raster, geoR, reshape2, ncdf4, RMySQL")
+print("These libraries must be installed: RMySQL, geoR, geospt, raster, reshape2")
 # Required libraries. If not present, run:
-# install.packages(c("geospt", "raster", "geoR", "reshape2", "ncdf4", "RMySQL"))
+# install.packages(c("RMySQL", "geoR", "geospt", "raster", "reshape2"))
+library (RMySQL)
+library (geoR)
 library (geospt)
 library (raster)
-library (geoR)
 library (reshape2)
-library (ncdf4)
-library (RMySQL)
+source("./netCDF_IO_v3.1.R")
 
 try (setwd("./EDENv3"), silent = T)
 source ("../usr_pwd.R")
@@ -43,4 +43,5 @@ st <- as.Date("2019-04-01")
 en <- Sys.Date() - 1
 date_range <- seq(st, en, "days")
 output_file <- paste0("./output/2019_", tolower(quarters(en)), ".nc")
-eden_nc(date_range, output_file)
+interp_list <- eden(date_range)
+eden_nc(interp_list, output_file)

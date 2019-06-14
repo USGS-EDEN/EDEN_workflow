@@ -26,6 +26,7 @@
 !*/input/.gitkeep
 !*/input/*.csv
 !*/input/*.txt
+!*/input/subareas/*.csv
 */output/*
 !*/output/.gitkeep
 */reports/*
