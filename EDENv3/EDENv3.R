@@ -21,9 +21,9 @@ library (geoR)
 library (geospt)
 library (raster)
 library (reshape2)
-source("./netCDF_IO_v3.1.R")
 
 try (setwd("./EDENv3"), silent = T)
+source("./netCDF_IO_v3.1.R")
 source ("../usr_pwd.R")
 source("./EDENv3_functions.R")
 # Connect to database, list of gages for which to acquire data
@@ -41,7 +41,13 @@ subareas_aniso <- lapply(subareas_aniso, setNames, c("x_aniso", "y_aniso"))
 
 st <- as.Date("2019-04-01")
 en <- Sys.Date() - 1
-date_range <- seq(st, en, "days")
-output_file <- paste0("./output/2019_", tolower(quarters(en)), ".nc")
-interp_list <- eden(date_range)
-eden_nc(interp_list, output_file)
+quarter <- seq(st, en, "days")
+output_nc <- paste0("./output/2019_", tolower(quarters(en)), ".nc")
+output_tif <- paste0("./output/", gsub("-", "", quarter), ".tif")
+edenmaster <- edenGages(quarter) # Create edenmaster data.frame
+gage_data <- gageData(edenmaster, quarter) # Create list contining daily gage data
+eden <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
+
+eden_nc(eden, quarter, output_nc)
+for (i in 1:length(eden)) eden_raster(eden[[i]], output_tif[i])
+setwd("..")

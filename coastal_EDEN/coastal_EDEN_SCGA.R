@@ -7,13 +7,13 @@
 # 07/16/2018
 #--------------
 
-print("These libraries must be installed: RMySQL, RCurl, CSI")
+print("These libraries must be installed: RMySQL, RCurl, dplyr, CSI")
 # Required libraries. If not present, run:
-# install.packages("RMySQL")
-# install.packages("RCurl")
-# devtools::install_github("USGS-EDEN/CSI")
+# install.packages("RMySQL", "RCurl", "dplyr")
+# devtools::install_github("USGS-R/CSI")
 library (RMySQL)
 library (RCurl)
+library (dplyr)
 library (CSI)
 
 try (setwd("./coastal_EDEN"), silent = T)
@@ -127,29 +127,42 @@ for (j in c("salinity", "temperature", "stage")) {
   }
 }
 
-query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
-for (j in 1:dim(gages)[1])
-  query <- paste0(query, ", avg(", gages$NWIS_ID[j], "_salinity) as `", gages$NWIS_ID[j], "`")
-query <- paste(query, "from coastal_sc_ga group by Year, Month")
-sal <- dbGetQuery(con, query)
-#sal <- CSIinterp(sal)
-csi <- CSIcalc(sal)
-CSIstack(csi, "./csi/", T, F, "bottom")
-CSIplot(csi, "./csi", "bottom")
-CSIwrite(csi, "./csi")
-for (i in 1:dim(csi)[1]) {
-  d1 <- d2 <- as.Date(paste0(rownames(csi)[i], "-01"))
-  m <- format(d2, format = "%m")
-  while (format(d2, format = "%m") == m) d2 <- d2 + 1
-  d2 <- as.integer(format(d2 - 1, format = "%d"))
-  for (k in 1:d2) {
-    query <- "update coastal_sc_ga set "
-    for (j in 1:dim(gages)[1]) {
-      c <- if(is.na(csi[i, 12, j])) "NULL" else csi[i, 12, j]
-      query <- paste0(query, "`", gages$NWIS_ID[j], "_csi` = ", c, ", ")
+for (i in 1:dim(gages)[1]) {
+  query <- paste0("select date_format(date, '%Y') as Year, date_format(date, '%m') as Month, ", gages$NWIS_ID[i], "_salinity as `", gages$NWIS_ID[i], "` from coastal_sc_ga order by date")
+  sal <- dbGetQuery(con, query)
+  sal <- sal[!is.na(sal[, 3]), ]
+  sal$Date <- as.Date(paste0(sal$Year, "-", sal$Month, "-01"))
+  mo <- seq.Date(sal$Date[1], rev(sal$Date)[1], "month")
+  for (j in 1:length(mo))
+    if (length(which(sal$Date == mo[j])) & length(which(sal$Date == mo[j])) < 15)
+      sal <- sal[-which(sal$Date == mo[j]), ]
+  sal <- sal[, 1:3]
+  sal <- group_by(sal, Year, Month)
+  sal <- summarize_all(sal, mean)
+  sal <- as.data.frame(sal)
+  sal$Month <- as.numeric(sal$Month)
+  # Find missing months and enter empty rows
+  rng <- data.frame(Date = seq.Date(as.Date(paste(sal$Year[1], sal$Month[1], "01", sep = "-")), as.Date(paste(rev(sal$Year)[1], rev(sal$Month)[1], "01" , sep = "-")), by = "month"))
+  rng$Year <- format(rng$Date, format = "%Y")
+  rng$Month <- as.numeric(format(rng$Date, format = "%m"))
+  rng <- rng[, -which(names(rng) == "Date")]
+  sal <- merge(rng, sal, all.x = T)
+  sal <- sal[order(sal$Year, sal$Month), ]
+  csi <- CSIcalc(sal)
+  CSIstack(csi, "./csi/", T, F, "bottom")
+  CSIplot(csi, "./csi", "bottom")
+  CSIwrite(csi, "./csi")
+  for (l in 12:dim(csi)[1]) {
+    d1 <- d2 <- as.Date(paste0(rownames(csi)[l], "-01"))
+    m <- format(d2, format = "%m")
+    while (format(d2, format = "%m") == m) d2 <- d2 + 1
+    d2 <- as.integer(format(d2 - 1, format = "%d"))
+    for (k in 1:d2) {
+      query <- paste0("update coastal_sc_ga set `", gages$NWIS_ID[i], "_csi` = ")
+      c <- if(is.na(csi[l, 12, 1])) "NULL" else csi[l, 12, 1]
+      query <- paste0(query, c, "  where date = '", rownames(csi)[l], "-", sprintf("%02d", k), "'")
+      dbSendQuery(con, query)
     }
-    query <- paste0(substr(query, 1, nchar(query) - 2), " where date = '", rownames(csi)[i], "-", sprintf("%02d", k), "'")
-    dbSendQuery(con, query)
   }
 }
 for (j in 1:dim(gages)[1]) {
