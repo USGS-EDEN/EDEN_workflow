@@ -133,7 +133,7 @@ for (i in 1:dim(gages)[1]) {
   sal <- sal[!is.na(sal[, 3]), ]
   sal$Date <- as.Date(paste0(sal$Year, "-", sal$Month, "-01"))
   mo <- seq.Date(sal$Date[1], rev(sal$Date)[1], "month")
-  for (j in 1:length(mo))
+  for (j in 1:(length(mo) - 1))
     if (length(which(sal$Date == mo[j])) & length(which(sal$Date == mo[j])) < 15)
       sal <- sal[-which(sal$Date == mo[j]), ]
   sal <- sal[, 1:3]
