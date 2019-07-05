@@ -210,7 +210,7 @@ for (j in 1:length(dt)) {
   }
   if (fail == 0) report <- paste0(report, "\n\nAnnotated daily median file generated for ", dt[j])
   # Transfer file to eFTP
-  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), .opts = list(forbid.reuse = 1)))
+  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag_v3rt.txt"), .opts = list(forbid.reuse = 1)))
   report <- if (inherits(err, "try-error")) paste0(report, "\nAnnotated daily median file NOT transferred for ", dt[j]) else paste0(report, "\nAnnotated daily median file transferred for ", dt[j])
 }
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))

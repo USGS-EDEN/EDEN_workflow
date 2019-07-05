@@ -13,14 +13,15 @@
 # US Geological Survey
 #--------------
 
-print("These libraries must be installed: RMySQL, geoR, geospt, raster, reshape2")
+print("These libraries must be installed: RMySQL, geoR, geospt, raster, reshape2, RCurl")
 # Required libraries. If not present, run:
-# install.packages(c("RMySQL", "geoR", "geospt", "raster", "reshape2"))
+# install.packages(c("RMySQL", "geoR", "geospt", "raster", "reshape2", "RCurl"))
 library (RMySQL)
 library (geoR)
 library (geospt)
 library (raster)
 library (reshape2)
+library (RCurl)
 
 try (setwd("./EDENv3"), silent = T)
 source("./netCDF_IO_v3.1.R")
@@ -39,15 +40,47 @@ subareas_aniso <- lapply(subareas, function(x) as.data.frame(coords.aniso(coords
 # Change column names
 subareas_aniso <- lapply(subareas_aniso, setNames, c("x_aniso", "y_aniso"))
 
-st <- as.Date("2019-04-01")
+yr <- strftime(Sys.Date() - 1, "%Y")
+q <- (as.numeric(strftime(Sys.Date() - 1, "%m")) - 1) %/% 3 + 1
+st <- as.Date(paste(yr, switch(q, "01", "04", "07", "10"), "01", sep = "-"))
 en <- Sys.Date() - 1
 quarter <- seq(st, en, "days")
-output_nc <- paste0("./output/2019_", tolower(quarters(en)), ".nc")
-output_tif <- paste0("./output/", gsub("-", "", quarter), ".tif")
+output_nc <- paste0("./output/", yr, "_q", q, ".nc")
+output_nc_d <- paste0("./output/d", yr, "_q", q, ".nc")
+output_tif <- paste0("./output/s_", gsub("-", "", quarter), "_v3.tif")
 edenmaster <- edenGages(quarter) # Create edenmaster data.frame
 gage_data <- gageData(edenmaster, quarter) # Create list contining daily gage data
-eden <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
+eden <- eden_d <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
+
+# Set up DEM file
+if (!file.exists("./input/eden_dem_cm_oc11.nc")) {
+  err <- try (download.file("https://sofia.usgs.gov/eden/data/dem/eden_dem_cm_oc11.zip", "./input/eden_dem_cm_oc11.zip"))
+  unzip("./input/eden_dem_cm_oc11.zip", "eden_dem_cm_oc11.nc", exdir = "./input")
+}
+dem.nc <- nc_open("./input/eden_dem_cm_oc11.nc")
+x <- ncvar_get(dem.nc, "x")
+y <- ncvar_get(dem.nc, "y")
+dem <- ncvar_get(dem.nc, "dem")
+nc_close(dem.nc)
+
+for (i in 1:length(eden_d)) {
+  print(quarter[i])
+  for (j in 1:dim(eden_d[[i]])[1]) {
+    xj <- which(x == eden_d[[i]]$X_COORD[j])
+    yj <- which(y == eden_d[[i]]$Y_COORD[j])
+    eden_d[[i]]$stage[j] <- eden_d[[i]]$stage[j] - dem[xj, yj]
+    eden_d[[i]]$stage[eden_d[[i]]$stage < 0] <- 0
+  }
+}
 
 eden_nc(eden, quarter, output_nc)
-for (i in 1:length(eden)) eden_raster(eden[[i]], output_tif[i])
+try (ftpUpload(output_nc, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc, 10)), .opts = list(forbid.reuse = 1)))
+for (i in 1:length(eden)) {
+  print(output_tif[i])
+  eden_raster(eden[[i]], output_tif[i])
+  try (ftpUpload(output_tif[i], paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_tif[i], 10)), .opts = list(forbid.reuse = 1)))
+}
+eden_nc(eden_d, quarter, output_nc_d)
+try (ftpUpload(output_nc_d, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc_d, 10)), .opts = list(forbid.reuse = 1)))
+
 setwd("..")

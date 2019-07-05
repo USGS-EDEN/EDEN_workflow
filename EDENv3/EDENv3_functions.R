@@ -203,6 +203,5 @@ eden_raster <- function (eden_layer, output_tif) {
   proj4string(eden_layer) <- CRS("+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
   gridded(eden_layer) <- T
   eden_layer <- raster(eden_layer)
-  eden_layer@file@nodatavalue <- -9999
-  writeRaster(eden_layer, output_tif, "GTiff", overwrite = T)
+  writeRaster(eden_layer, output_tif, "GTiff", overwrite = T, NAflag = -9999)
 }
