@@ -148,10 +148,10 @@ for (i in 1:dim(gages)[1]) {
   rng <- rng[, -which(names(rng) == "Date")]
   sal <- merge(rng, sal, all.x = T)
   sal <- sal[order(sal$Year, sal$Month), ]
+  sal_out <- if (i == 1) sal else merge(sal_out, sal, by = c("Year", "Month"), all = T)
   csi <- CSIcalc(sal)
   CSIstack(csi, "./csi/", T, F, "bottom")
   CSIplot(csi, "./csi", "bottom")
-  CSIwrite(csi, "./csi")
   for (l in 12:dim(csi)[1]) {
     d1 <- d2 <- as.Date(paste0(rownames(csi)[l], "-01"))
     m <- format(d2, format = "%m")
@@ -165,6 +165,7 @@ for (i in 1:dim(gages)[1]) {
     }
   }
 }
+write.csv(sal_out, "./csi/CSI_calculation_data.csv", quote = F, row.names = F)
 for (j in 1:dim(gages)[1]) {
   err <- try (ftpUpload(paste0("./csi/", gages$NWIS_ID[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_stacked/", gages$NWIS_ID[j], "thumb.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI thumbnail transferred")
@@ -177,7 +178,7 @@ for (j in 1:dim(gages)[1]) {
     if (inherits(err, "try-error")) report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " NOT transferred") else report <- paste0(report, "\n", gages$NWIS_ID[j], " CSI interval ", i, " transferred")
   }
 }
-err <- try (ftpUpload("./csi/CSI_calculation_data.txt", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/CSI_calculation_data.csv"))
+err <- try (ftpUpload("./csi/CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden_scga/csi_values/CSI_calculation_data.csv"))
 if (inherits(err, "try-error")) report <- paste0(report, "\n", " CSI raw input values NOT transferred") else report <- paste0(report, "\n", " CSI raw input values transferred")
 
 col <- c("tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
