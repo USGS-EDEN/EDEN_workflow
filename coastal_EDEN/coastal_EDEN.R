@@ -68,8 +68,8 @@ for (i in 1:length(params$column)) {
       names(v)[dim(v)[2]] <- params$column[i]
       max <- dbGetQuery(con, paste0("select max(`", params$column[i], "`) from coastal"))
       min <- dbGetQuery(con, paste0("select min(`", params$column[i], "`) from coastal"))
-      if (any(v[, params$column[i]] > max, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum of", max, "ft.\n")
-      if (any(v[, params$column[i]] < min, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "less than historical minimum of", min, "ft.\n")
+      if (any(as.numeric(v[, params$column[i]]) > max, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum of", max, "\n")
+      if (any(as.numeric(v[, params$column[i]]) < min, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "less than historical minimum of", min, "\n")
     }
   }
 }
