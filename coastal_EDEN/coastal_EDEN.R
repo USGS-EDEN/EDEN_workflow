@@ -41,6 +41,7 @@ v <- data.frame(datetime = range)
 
 # Retrieve data and build input data.frame
 report <- ""
+options(stringsAsFactors = F) # needed to keep strings from becoming factors on merge
 for (i in 1:length(params$column)) {
   # Generate AQUARIUS URLs; add 1 for DST end timestamps
   url <- paste0("https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=", params$id[i], "&startDT=", days[1], "&endDT=", days[2], "&parameterCd=", params$param[i], "&access=3")
@@ -65,6 +66,10 @@ for (i in 1:length(params$column)) {
       dd_col <- 5
       v <- cbind(v, merge(range, tmp, by.x = 1, by.y = "datetime", all.x = T)[, dd_col])
       names(v)[dim(v)[2]] <- params$column[i]
+      max <- dbGetQuery(con, paste0("select max(`", params$column[i], "`) from coastal"))
+      min <- dbGetQuery(con, paste0("select min(`", params$column[i], "`) from coastal"))
+      if (any(v[, params$column[i]] > max, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum of", max, "ft.\n")
+      if (any(v[, params$column[i]] < min, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "less than historical minimum of", min, "ft.\n")
     }
   }
 }
