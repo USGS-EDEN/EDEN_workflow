@@ -144,7 +144,7 @@ query <- paste(query, "from coastal group by Year, Month")
 sal <- dbGetQuery(con, query)
 #sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
-CSIstack(csi, "./csi/", T, F)
+CSIstack(csi, "./csi/", T, F, leg = "bottom")
 for (j in 1:dim(db)[1]) {
   err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked_thumb.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail transferred")
