@@ -7,14 +7,16 @@
 # 07/16/2018
 #--------------
 
-print("These libraries must be installed: RMySQL, RCurl, CSI")
+print("These libraries must be installed: RMySQL, RCurl, CSI, zoo")
 # Required libraries. If not present, run:
 # install.packages("RMySQL")
 # install.packages("RCurl")
+# install.packages("zoo")
 # devtools::install_github("USGS-EDEN/CSI")
 library (RMySQL)
 library (RCurl)
 library (CSI)
+library (zoo)
 
 try (setwd("./coastal_EDEN"), silent = T)
 source ("../admin_pwd.R")
@@ -70,6 +72,13 @@ for (i in 1:length(params$column)) {
       min <- dbGetQuery(con, paste0("select min(`", params$column[i], "`) from coastal"))
       if (any(as.numeric(v[, params$column[i]]) > max, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum of", max, "\n")
       if (any(as.numeric(v[, params$column[i]]) < min, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "less than historical minimum of", min, "\n")
+      daily_mean <- dbGetQuery(con, paste0("select avg(`", params$column[i], "`) from coastal group by date(datetime)"))[, 1]
+      max_rise <- max(daily_mean[2:length(daily_mean)] - daily_mean[1:(length(daily_mean) - 1)], na.rm = T)
+      max_fall <- max(daily_mean[1:(length(daily_mean) - 1)] - daily_mean[2:length(daily_mean)], na.rm = T)
+      z <- read.zoo(v[, c("datetime", params$column[i])], tz = "EST")
+      z <- aggregate(z, as.Date, function (x) mean(as.numeric(x), na.rm = T))
+      if (any(as.numeric(z[2:15]) - as.numeric(z[1:14]) > max_rise, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum rise of", max_rise, "per day\n")
+      if (any(as.numeric(z[1:14]) - as.numeric(z[2:15]) > max_fall, na.rm = T)) report <- paste(report, "Values found for", params$column[i], "greater than historical maximum fall of", max_fall, "per day\n")
     }
   }
 }
@@ -191,7 +200,7 @@ for (j in 1:length(db$station_name_web)) {
 }
 
 ### System level commands may not work if local environment does not have sendmail installed!!
-to <- "bmccloskey@usgs.gov"
+to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov"
 system(paste0("echo 'Subject: CoastalEDENdb upload report
 ", report, "' | /usr/sbin/sendmail ", to))
 setwd("..")
