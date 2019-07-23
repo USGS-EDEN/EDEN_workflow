@@ -123,12 +123,15 @@ for (i in 1:length(sub)) {
 # Update existing stats .js
 err <- try (download.file("https://sofia.usgs.gov/eden/csss/por_stats.js", "./output/por_stats.js"))
 js <- readChar("./output/por_stats.js", 1e8)
-js <- substr(js, 1, regexpr(format(df$date[90], "%Y%m%d"), js) - 5)
-for (i in 90:dim(df)[1])
-  js <- paste0(js, ",\n'a", format(df$date[i], "%Y%m%d"), "' : ['", paste(df[i, 2:dim(df)[2]], collapse = "', '"), "']")
-js <- paste0(js, "\n}")
-write(js, "./output/por_stats.js")
-err <- try (ftpUpload("./output/por_stats.js", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/por_stats.js"))
+d <- regexpr(format(df$date[90], "%Y%m%d"), js)
+if (d > 0) {
+  js <- substr(js, 1, d - 5)
+  for (i in 90:dim(df)[1])
+    js <- paste0(js, ",\n'a", format(df$date[i], "%Y%m%d"), "' : ['", paste(df[i, 2:dim(df)[2]], collapse = "', '"), "']")
+  js <- paste0(js, "\n}")
+  write(js, "./output/por_stats.js")
+  err <- try (ftpUpload("./output/por_stats.js", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/por_stats.js"))
+}
 
 err <- try (download.file("https://sofia.usgs.gov/eden/csss/CSSS_subarea_stats.csv.zip", "./output/CSSS_subarea_stats.csv.zip"))
 unzip("./output/CSSS_subarea_stats.csv.zip", exdir = "./output/", junkpaths = T)
