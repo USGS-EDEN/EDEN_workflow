@@ -4,9 +4,9 @@ EDEN Workflow is an attempt to reproduce the EDEN daily (and other) workflows, i
 
 ## Description of Workflow folders
 
-- **ADAM_input:** (runs daily at 7:15AM) Download of daily data from USGS, SFWMD, and ENP; collating; and formatting for ADAM input. Can be modified to generate arbitrary length multiday files (by default runs 7-, 4-, and 1-day files), with either local or remote (eFTP) source data files, via script or command line parameters (e.g., "/usr/local/bin/R --no-save --no-site-file < ADAM_input/ADAM_input.R 7 4 1" where "7 4 1" is a list of n-day files to generate).
-- **coastal_EDEN:** (runs daily at 7:30AM; SC/GA data runs at 7:45AM) Download daily FL and SC/GA coastal data, calculate salinities and CSIs, populate database, generate plots, and transfer files.
+- **coastal_EDEN:** (runs daily at 1:30AM; SC/GA data runs at 1:45AM) Download daily FL and SC/GA coastal data, calculate salinities and CSIs, populate database, generate plots, and transfer files.
 - **coastal_hydrograph_get.sh:** (on stpweb1, runs daily at 8:30AM) Retrieve CoastalEDEN files to webserver. **(To do: Convert code to R and add to repo.)**
+- **ADAM_input:** (runs daily at 7:15AM) Download of daily data from USGS, SFWMD, and ENP; collating; and formatting for ADAM input. Can be modified to generate arbitrary length multiday files (by default runs 7-, 4-, and 1-day files), with either local or remote (eFTP) source data files, via script or command line parameters (e.g., "/usr/local/bin/R --no-save --no-site-file < ADAM_input/ADAM_input.R 7 4 1" where "7 4 1" is a list of n-day files to generate).
 - **EDENdb_upload:** (runs daily at 12:24PM) Retrieve daily output from ADAM, process, load into EDENdb, create EDEN model input data, generate annotated daily median files, and update EDENdb daily values table.
 _ **EDENv3:** (runs daily at 12:30) Run the EDEN model and create .nc and geotiff files.
 - **netCDF_headers**: (runs daily at 2:10PM) Modify the EDEN model output netCDF files' headers.
