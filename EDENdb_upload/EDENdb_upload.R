@@ -135,60 +135,6 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
 gages$agency[which(gages$agency == "ENP")] <- "NPS"
 # Date range to generate files for
 dt <- seq(Sys.Date() - 4, Sys.Date() - 1, "days")
-# Initialize text output
-text <- "# TIME SERIES RECORD
-#  "
-# Loop by agency, generate daily median input files
-for (i in 1:length(unique(gages$agency))) {
-  print(unique(gages$agency)[i])
-  agency <- unique(gages$agency)[i]
-  lagency <- tolower(agency)
-  # Initialize columns
-	head <- c("YEAR", "MONTH", "DAY", "MINUTE", gages$station_name[gages$agency == agency])
-	query <- "select datetime"
-	# Loop by station, build query
-	for (j in 1:length(gages$station_name_web[gages$agency == agency]))
-		query <- paste0(query, ", `stage_", gages$station_name_web[gages$agency == agency][j], "`")
-	query <- paste0(query, " from stage where datetime >= ", format(dt[1], "%Y%m%d010000"), " and datetime < ", format(dt[length(dt)] + 1, "%Y%m%d000001"), " order by datetime")
-	db <- dbGetQuery(con, query)
-	db$datetime <- as.POSIXct(db$datetime, tz = "EST", format = "%Y-%m-%d %H:%M:%S")
-	# Generate midnight value if missing
-  if (dim(db)[1] == 95 & as.POSIXlt(db$datetime[95])$hour == 23) { db[96, ] <- db[95, ]; db$datetime[96] <- db$datetime[95] + 3600 }
-	# Report gages with missing values
-	report <- paste0(report, "\nSurfacing gages with M-flagged missing ", agency, " data points in EDENdb for date of interest (", dt[4] ,"): ")
-	# Loop by date, build files
-	for (j in 1:length(dt)) {
-	  print(dt[j])
-		write.table(text, paste0("./", lagency, "/", lagency, "_", format(dt[j] + 1, "%Y%m%d")), quote = F, row.names = F, col.names = F)
-	  # Matrix of values
-		mat <- matrix(nrow = 25, ncol = length(head))
-		colnames(mat) <- head
-		# Legacy header row
-		mat[1, ] <- "12N"
-		mat[-1, 1] <- format(dt[j], "%Y")
-		mat[-1, 2] <- as.numeric(format(dt[j], "%m"))
-		mat[-1, 3] <- as.numeric(format(dt[j], "%d"))
-		mat[-1, 4] <- seq(60, 1440, 60)
-		for (k in 5:length(head)) {
-			tmp <- db[c(1:24) + (j - 1) * 24, k - 3]
-			# Email report of missing values
-			if (j == 4 & length(which(is.na(tmp)))) report <- paste(report, "\n", paste(head[k], ": ", db$datetime[which(is.na(tmp))], sep = "", collapse = "\n"), "\n", sep = "")
-			tmp <- ifelse(is.na(tmp), "-123456E20", tmp)
-			mat[-1, k] <- if (length(mat[-1, k]) == length(tmp)) tmp else "-123456E20"
-			# Text file report of missing values
-			if (sum(tmp == "-123456E20") > 0) write.table(paste(head[k], sum(tmp == "-123456E20"), sep = "\t"), paste0("./missing/", format(dt[j] + 1, "%Y%m%d"), ".txt"), quote = F, row.names = F, col.names = F, append = T)
-		}
-		# Write matrix to file
-		f <- paste0(lagency, "_", format(dt[j] + 1, "%Y%m%d"))
-		file <- paste0("./", lagency, "/", f)
-		err <- try (write.table(mat, file, sep = "\t", quote = F, row.names = F, col.names = T, append = T), T)
-		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT generated for ", dt[j]) else paste0(report, "\n", agency, " daily median input file generated for ", dt[j])
-		# Transfer file to eFTP
-		err <- try (ftpUpload(file, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/realtime_v2_test/", f), .opts = list(forbid.reuse = 1)))
-		report <- if (inherits(err, "try-error")) paste0(report, "\n", agency, " daily median input file NOT transferred for ", dt[j]) else paste0(report, "\n", agency, " daily median input file transferred for ", dt[j])
-	}
-}
-
 # Default dry values for gages missing them
 gages$dry_elevation[which(is.na(gages$dry_elevation))] <- -9999
 # Loop by dates to generate annotated daily median flag files
