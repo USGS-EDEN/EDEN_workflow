@@ -189,9 +189,7 @@ eden_nc <- function (interp_list, date_range, output_file) {
     dt <- interp_list[[j]]
     # create matrix for netcdf
     out_mat <- acast(dt, X_COORD ~ Y_COORD, value.var = out_layer)
-    # rotate matrix
-    out_mat <- t(apply(out_mat, 1, rev)) 
-    
+
     vec2nc(nc_out, out_mat, out_layer, j)
   }
   

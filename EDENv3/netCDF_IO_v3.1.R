@@ -185,7 +185,7 @@ createNetCDFfile <- function(out.name,            # name of created netCDF file
    print("X Dim")
    dimX <- ncdim_def( "x", "", 1:length(seq(extent[1], extent[2], by = cell.size)), create_dimvar=FALSE, longname="x coordinate of projection")
    print("Y Dim")
-   dimY <- ncdim_def( "y", "", 1:length(seq(extent[3], extent[4], by = (-1 * cell.size))), create_dimvar=FALSE, longname="y coordinate of projection")   
+   dimY <- ncdim_def( "y", "", 1:length(seq(extent[4], extent[3], by = cell.size)), create_dimvar=FALSE, longname="y coordinate of projection")   
    varTime <- NULL
    if (timeDim){
      print(paste("T Dim", 1:length(tCntVec)))
@@ -237,7 +237,7 @@ createNetCDFfile <- function(out.name,            # name of created netCDF file
    print("Write X")
    ncvar_put( nc, varX, seq(extent[1], extent[2], by = cell.size)) 
    print("Write Y")
-   ncvar_put( nc, varY, seq(extent[3], extent[4], by = (-1 * cell.size))) 
+   ncvar_put( nc, varY, seq(extent[4], extent[3], by = cell.size)) 
    if (timeDim){
      print("Write Time")
      ncvar_put( nc, varTime, tCntVec) 
