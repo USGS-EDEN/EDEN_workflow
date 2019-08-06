@@ -31,12 +31,12 @@ gages$param[gages$param == ""] <- "99999"
 gages$dd[gages$dd == 0] <- "9"
 
 # Command line arguments for number of days to load
-days <- commandArgs(trailingOnly = T)
-if (length(days) == 0)
-  days <- c(7, 4, 1)
+lday <- commandArgs(trailingOnly = T)
+if (length(lday) == 0)
+  lday <- c(7, 4, 1)
 
 header <- "agency_cd\tsite_no\tdd_nu\tparameter_cd\tUVTYPE\tdate_tm\tTZCD\tVALUE\tPRECISION\tREMARK\tFLAGS\tQA"
-for (d in days) {
+for (d in lday) {
   # Initialize email report
   report <- ""
   
