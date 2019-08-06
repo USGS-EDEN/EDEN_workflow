@@ -19,8 +19,8 @@ try (setwd("./ADAM_input"), silent = T)
 source ("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
-gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, dd, param, ts_id, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
 
+gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, dd, param, ts_id, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
 # Dummy NWIS IDs, other legacy params, for new gages
 gages$usgs_nwis_id[gages$station_name == "SPARO"]    <- "999999999999998"
 gages$usgs_nwis_id[gages$station_name == "USSO+"]    <- "999999999999997"
@@ -110,7 +110,7 @@ for (d in days) {
       if (inherits(err, "try-error") | inherits(err2, "try-error"))
         report <- paste0(report, "ENP input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     }
-    if (!file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
+    if (!length(enp_file) | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
       report <- paste0(report, "ENP local input file _NOT_ found for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     } else {
       report <- paste0(report, "ENP file found for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
@@ -165,7 +165,7 @@ for (d in days) {
       if (inherits(err, "try-error") | inherits(err2, "try-error"))
         report <- paste0(report, "SFWMD input file _NOT_ downloaded for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     }
-    if (!file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
+    if (!length(sfwmd_file) | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
       report <- paste0(report, "SFWMD local input file _NOT_ found for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
     } else {
       report <- paste0(report, "SFWMD file found for ", format(days[2] - i, "%m/%d/%Y"), ".\n")
