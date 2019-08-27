@@ -9,7 +9,8 @@ EDEN Workflow is an attempt to reproduce the EDEN daily (and other) workflows, i
 - **ADAM_input:** (runs daily at 7:15AM) Download of daily data from USGS, SFWMD, and ENP; collating; and formatting for ADAM input. Can be modified to generate arbitrary length multiday files (by default runs 7-, 4-, and 1-day files), with either local or remote (eFTP) source data files, via script or command line parameters (e.g., "/usr/local/bin/R --no-save --no-site-file < ADAM_input/ADAM_input.R 7 4 1" where "7 4 1" is a list of n-day files to generate).
 - **EDENdb_upload:** (runs daily at 12:24PM) Retrieve daily output from ADAM, process, load into EDENdb, generate annotated daily median files, and update EDENdb daily values table.
 _ **EDENv3:** (runs daily at 12:30) Run the EDEN model and create .nc and geotiff files.
-- **realtime_jpgs:** (runs daily at 2:20PM) Generate the thumbnails and contour images for the EDEN website.
+- **realtime_jpgs:** (runs daily at 2:20PM) Generate the surface, thumbnail, and contour images for the EDEN website.
+- **realtime_jpgs_get.sh:** (on stpweb1, runs daily at 2:30PM) Retrieves realtime surface jpgs to the web server.
 - **CSSS_viewer**: (runs daily at 2:30PM) Generate the CSSS webapp data, statistics, images, and report.
 - **ERTP_hydrographs** (runs daily at 2:35PM) Produce gage and tree island ERTP duration hydrograph plots and data, transfer files, and prepare alert email.
 - **WADEM**: (runs daily at 2:45PM) Generate the WADEM webapp data, images, graphs.

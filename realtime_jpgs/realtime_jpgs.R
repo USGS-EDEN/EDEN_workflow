@@ -71,6 +71,9 @@ for (i in length(time2):1) {
   par(mar = c(0, 0, 0, 0))
   image(x, y, depth[, , i], zlim = c(0, 267), col = stage.col[40:81], xlab = "", xaxt = "n", ylab = "", yaxt = "n", frame.plot = F)
   dev.off()
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth.jpg"), .opts = list(forbid.reuse = 1)))
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth_contour.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth_contour.jpg"), .opts = list(forbid.reuse = 1)))
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth_small.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_depth_small.jpg"), .opts = list(forbid.reuse = 1)))
 }
 for (i in length(time):1) {
   jpeg(paste0("./images/EDENsurface_", format(time[i], format = "%Y%m%d"), ".jpg"), width = 800, height = 1000, quality = 100)
@@ -83,5 +86,8 @@ for (i in length(time):1) {
   par(mar = c(0, 0, 0, 0))
   image(x, y, stage[, , i], zlim = c(-100, 548), col = stage.col, xlab = "", xaxt = "n", ylab = "", yaxt = "n", frame.plot = F)
   dev.off()
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), ".jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), ".jpg"), .opts = list(forbid.reuse = 1)))
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_contour.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_contour.jpg"), .opts = list(forbid.reuse = 1)))
+  try (ftpUpload(paste0("./images/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_small.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/jpg/EDENsurface_", format(time2[i], format = "%Y%m%d"), "_small.jpg"), .opts = list(forbid.reuse = 1)))
 }
 setwd("..")
