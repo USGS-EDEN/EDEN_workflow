@@ -7,12 +7,12 @@
 # 07/26/2019
 #--------------
 
-print("These libraries must be installed: ncdf4, RColorBrewer")
+print("These libraries must be installed: ncdf4, RColorBrewer, RCurl")
 # Required libraries. If not present, run:
-# install.packages("ncdf4")
-# install.packages("RColorBrewer")
-library(ncdf4)
-library(RColorBrewer)
+# install.packages("ncdf4", "RColorBrewer", "RCurl")
+library (ncdf4)
+library (RColorBrewer)
+library (RCurl)
 
 try (setwd("./realtime_jpgs"), silent = T)
 
