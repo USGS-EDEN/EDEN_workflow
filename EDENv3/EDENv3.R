@@ -47,7 +47,7 @@ en <- Sys.Date() - 1
 quarter <- seq(st, en, "days")
 output_nc <- paste0("./output/", yr, "_q", q, ".nc")
 output_nc_d <- paste0("./output/d", yr, "_q", q, ".nc")
-output_tif <- paste0("./output/s_", gsub("-", "", quarter), "_v3.tif")
+output_tif <- paste0("./output/s_", gsub("-", "", quarter), ".tif")
 edenmaster <- edenGages(quarter) # Create edenmaster data.frame
 gage_data <- gageData(edenmaster, quarter) # Create list contining daily gage data
 eden <- eden_d <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
@@ -81,6 +81,10 @@ for (i in 1:length(eden)) {
   try (ftpUpload(output_tif[i], paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_tif[i], 10)), .opts = list(forbid.reuse = 1)))
 }
 eden_nc(eden_d, quarter, output_nc_d)
+d.nc <- nc_open(output_nc_d, write = T)
+ncvar_rename(d.nc, "stage", "depth")
+ncatt_put(d.nc, "stage", "long_name", "Water Depth (cm)")
+nc_close(d.nc)
 try (ftpUpload(output_nc_d, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc_d, 10)), .opts = list(forbid.reuse = 1)))
 
 setwd("..")

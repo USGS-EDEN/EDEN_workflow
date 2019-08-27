@@ -82,7 +82,6 @@ for (i in 1:length(surf_files)) {
   print(paste("Building subareas for", surf_files[i]))
   s.nc <- nc_open(surf_files[i])
   s <- ncvar_get(s.nc, "stage", collapse_degen = F)
-  if (i == 2) s <- s[, 405:1, ]
   t <- ncvar_get(s.nc, "time")
   if (i == 1) time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
   if (i == 2) time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
@@ -226,7 +225,6 @@ err <- try (ftpUpload("./output/recent_week_subpop_mean_water_depth.png", "ftp:/
 col <- c("deepskyblue", "steelblue", "blue3", "blue4")
 s.nc <- nc_open(surf_files[2])
 s <- ncvar_get(s.nc, "stage", collapse_degen = F)
-s <- s[, 405:1, ]
 time <- ncvar_get(s.nc, "time")
 time <- as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + time
 nc_close(s.nc)

@@ -144,8 +144,8 @@ gageData <- function (edenmaster, quarter) {
 
 eden_nc <- function (interp_list, date_range, output_file) {
   # Find min and max for netCDF attributes
-  depth_min <- min(unlist(lapply(interp_list, function (df) min(df$stage))))
-  depth_max <- max(unlist(lapply(interp_list, function (df) max(df$stage))))
+  depth_min <- min(unlist(lapply(interp_list, function (df) min(df$stage, na.rm = T))))
+  depth_max <- max(unlist(lapply(interp_list, function (df) max(df$stage, na.rm = T))))
 
   ## -------------------------------------------------------------------------
   # Set up netCDF header info 

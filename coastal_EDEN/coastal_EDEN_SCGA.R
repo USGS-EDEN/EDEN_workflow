@@ -132,10 +132,6 @@ for (i in 1:dim(gages)[1]) {
   sal <- dbGetQuery(con, query)
   sal <- sal[!is.na(sal[, 3]), ]
   sal$Date <- as.Date(paste0(sal$Year, "-", sal$Month, "-01"))
-  mo <- seq.Date(sal$Date[1], rev(sal$Date)[1], "month")
-  for (j in 1:(length(mo) - 1))
-    if (length(which(sal$Date == mo[j])) & length(which(sal$Date == mo[j])) < 15)
-      sal <- sal[-which(sal$Date == mo[j]), ]
   sal <- sal[, 1:3]
   sal <- group_by(sal, Year, Month)
   sal <- summarize_all(sal, mean)
@@ -150,7 +146,7 @@ for (i in 1:dim(gages)[1]) {
   sal <- sal[order(sal$Year, sal$Month), ]
   sal_out <- if (i == 1) sal else merge(sal_out, sal, by = c("Year", "Month"), all = T)
   csi <- CSIcalc(sal)
-  CSIstack(csi, "./csi/", T, F, "bottom")
+  CSIstack(csi, "./csi/", T, F, F, "bottom")
   CSIplot(csi, "./csi", "bottom")
   for (l in 12:dim(csi)[1]) {
     d1 <- d2 <- as.Date(paste0(rownames(csi)[l], "-01"))

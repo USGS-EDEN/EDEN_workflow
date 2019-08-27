@@ -156,7 +156,7 @@ for (j in 1:length(dt)) {
   }
   if (fail == 0) report <- paste0(report, "\n\nAnnotated daily median file generated for ", dt[j])
   # Transfer file to eFTP
-  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag_v3rt.txt"), .opts = list(forbid.reuse = 1)))
+  err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), .opts = list(forbid.reuse = 1)))
   report <- if (inherits(err, "try-error")) paste0(report, "\nAnnotated daily median file NOT transferred for ", dt[j]) else paste0(report, "\nAnnotated daily median file transferred for ", dt[j])
 }
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
@@ -201,5 +201,27 @@ for (i in length(range):1) {
   if (date_check$ct == 1)
     query <- paste0(query, " where date = '", range[i], "'")
   dbSendQuery(con, query)
+}
+
+# update test databases
+range <- dbGetQuery(con, paste0("select datetime from stage where datetime > 20190801000000 order by datetime"))
+range <- as.POSIXct(range$datetime, tz = "EST")
+for (i in 1:length(range)) {
+  date_check <- dbGetQuery(con, paste0("select count(datetime) as ct from stage_test where datetime = '", range[i], "'"))
+  if (date_check$ct == 0)
+    dbSendQuery(con, paste0("insert into stage_test (datetime) values ('", range[i], "')"))
+  date_check <- dbGetQuery(con, paste0("select count(datetime) as ct from dbhydro_stage where datetime = '", range[i], "'"))
+  if (date_check$ct == 0)
+    dbSendQuery(con, paste0("insert into dbhydro_stage (datetime) values ('", range[i], "')"))
+}
+range <- dbGetQuery(con, paste0("select date from stage_daily where date > 20190801 order by date"))
+range <- as.Date(range$date)
+for (i in 1:length(range)) {
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from stage_daily_test where date = '", range[i], "'"))
+  if (date_check$ct == 0)
+    dbSendQuery(con, paste0("insert into stage_daily_test (date) values ('", range[i], "')"))
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from dbhydro_stage_daily where date = '", range[i], "'"))
+  if (date_check$ct == 0)
+    dbSendQuery(con, paste0("insert into dbhydro_stage_daily (date) values ('", range[i], "')"))
 }
 setwd("..")
