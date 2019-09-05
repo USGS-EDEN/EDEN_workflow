@@ -49,8 +49,8 @@ if (month == "01") { month <- "12"; year <- as.numeric(year) - 1 } else month <-
 fst <- as.Date(paste(year, month, "01", sep = "-"))
 lst <- (seq(fst, length = 2, by = "month") - 1)[2]
 dt <- seq(as.Date("2002-01-01"), lst, by = "day")
-rain_old <- list.files("./rainfall/rainfall_archive/", "rainfall_[0-9]{4}.txt$", full.names = T)
-rain_new <- list.files("./rainfall/rainfall_archive/", "rainfall_[0-9]{6}.txt$", full.names = T)
+rain_old <- list.files("./rainfall/", "rainfall_[0-9]{4}.txt$", full.names = T)
+rain_new <- list.files("./rainfall/", "rainfall_[0-9]{6}.txt$", full.names = T)
 
 write("date,avg", "./daily_average_rainfall-all_EDEN_pixels.csv")
 for (i in 1:length(rain_old)) {
