@@ -205,7 +205,7 @@ for (k in c("salinity", "temperature", "stage"))
       dev.off()
       jpeg(paste0("./duration_hydrographs/", gages$NWIS_ID[j], "_", k, ".jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
       par(mar = c(5, 4, 4, 5) + .1)
-      lab <- if (k == "salinity") "Salinity (PPT)" else if (k == "temperature") "Temperature (°C)" else "Stage (ft.)"
+      lab <- if (k == "salinity") "Salinity (PPT)" else if (k == "temperature") "Temperature (degrees Celcius)" else "Stage (ft.)"
       plot(qyear[, 1], type = "n", xlab = "Month of year", ylab = lab, ylim = range(qyear, na.rm = T), xaxt = "n", main = paste0(gages$NWIS_ID[j], " three year ", k, ", 30 day moving window"))
       axis(1, at = which(as.POSIXlt(yr3$date)$mday == 1), labels = format(yr3$date[which(as.POSIXlt(yr3$date)$mday == 1)], "%b"), hadj = -1)
       axis(1, at = which(as.POSIXlt(yr3$date)$yday == 0), labels = format(yr3$date[which(as.POSIXlt(yr3$date)$yday == 0)], "%Y"), padj = 1)
