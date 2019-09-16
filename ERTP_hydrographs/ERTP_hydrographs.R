@@ -127,9 +127,9 @@ if(low_counter == 0) lw <- paste0(lw, "<strong>No gages equal or are below the 2
 
 # Set up WL files
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v2rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
 unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
-file.rename(paste0("../surfaces/", cur_qtr, "_v2rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
+file.rename(paste0("../surfaces/", cur_qtr, "_v3rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 unlink("../surfaces/*.zip")
 
 yr <- as.POSIXlt(Sys.Date() - 1)$year + 1900
