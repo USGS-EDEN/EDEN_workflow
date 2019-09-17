@@ -8,6 +8,7 @@
 .Ruserdata
 *.log
 *.csv
+!*/SCGA_salinity_gages.csv
 */flag/*
 !*/flag/.gitkeep
 */missing/*
@@ -26,6 +27,7 @@
 !*/input/.gitkeep
 !*/input/*.csv
 !*/input/*.txt
+!*/input/subareas/
 !*/input/subareas/*.csv
 */output/*
 !*/output/.gitkeep

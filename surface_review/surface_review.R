@@ -20,7 +20,7 @@ time <- stage <- depth <- NULL
 
 # Place WL and depth .nc files to be reviewed in working directory
 ### RUN netcdf_header.R ON QUARTERLY FILES TO FIX HEADERS
-file_surf <- list.files("./surfaces", "^[0-9]{4}_q[1-4].nc$")
+file_surf <- list.files("./surfaces", "^[0-9]{4}_q[1-4]_wca2.nc$")
 depth_surf <- list.files("./surfaces", "^d[0-9]{4}_q[1-4].nc$")
 
 # Loop through potentially multiple surfaces, create data arrays
@@ -36,15 +36,15 @@ for(i in 1:length(file_surf)) {
   
   # Time vector
   t <- ncvar_get(surf.nc, "time")
-  time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format="days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
+  time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format="days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
   nc_close(surf.nc)
 
   # Depth .nc's
-  surf.nc <- nc_open(paste0("./surfaces", "/", depth_surf[i]))
+#  surf.nc <- nc_open(paste0("./surfaces", "/", depth_surf[i]))
   
   # Depth array
-  depth <- abind(depth, ncvar_get(surf.nc, "depth"))
-  nc_close(surf.nc)
+#  depth <- abind(depth, ncvar_get(surf.nc, "depth"))
+#  nc_close(surf.nc)
 }
 
 ## Create gage hydrographs comparing EDENdb to .nc pixel values
@@ -58,7 +58,7 @@ for (j in 1:dim(gages)[1]) {
   
   # Data values of closest pixel
   wl <- stage[xval, yval, ]
-  d <- depth[xval, yval, ]
+#  d <- depth[xval, yval, ]
   
   # EDENdb data values
   db <- dbGetQuery(con, paste0("select datetime, `stage_", gages$station_name_web[j], "` + ", gages$conv[j], " as stage from stage where datetime >= ", format(time[1] - 1,"%Y%m%d"), "000000 and datetime < ", format(time[length(time)] + 2, "%Y%m%d"), "000000 order by datetime"))
@@ -70,7 +70,7 @@ for (j in 1:dim(gages)[1]) {
   db$wl <- db$d <- NA
   # .nc's are daily, EDENdb are hourly; assign surface values to noon timestamps
   db$wl[seq(37, dim(db)[1] - 24, 24)] <- wl
-  db$d[seq(37, dim(db)[1] - 24, 24)] <- d
+#  db$d[seq(37, dim(db)[1] - 24, 24)] <- d
   # Get y-axis data range
   range <- range(db$stage, db$wl, na.rm = T)
   if (is.infinite(range[1]) | is.infinite(range[2])) range <- c(-1, 1)
@@ -120,11 +120,11 @@ for (i in 1:length(time)) {
   contour(x, y, stage[, , i], levels = seq(r1[1], r1[2], by = 3), lwd = c(1, 0.5), add = T)
   dev.off()
 
-  png(paste0("./depth_contours/day", sprintf("%04d", i - 1), ".png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
-  par(mar = c(0, 0, 0, 0))
-  image(x, y, depth[, , i], col = depth.col, breaks = seq(r2[1], r2[2], length.out = 82), axes = F, asp = 1, xlab = "", ylab = "")
-  text(x[1], y[10], as.Date(time[i]), pos = 4)
-  contour(x, y, depth[, , i], levels = seq(r2[1], r2[2], by = 3), lwd = c(1, 0.5), add = T)
-  dev.off()
+#  png(paste0("./depth_contours/day", sprintf("%04d", i - 1), ".png"), width = 1228, height = 1724, units = "px", pointsize = 12, bg = "transparent", type = "quartz")
+#  par(mar = c(0, 0, 0, 0))
+#  image(x, y, depth[, , i], col = depth.col, breaks = seq(r2[1], r2[2], length.out = 82), axes = F, asp = 1, xlab = "", ylab = "")
+#  text(x[1], y[10], as.Date(time[i]), pos = 4)
+#  contour(x, y, depth[, , i], levels = seq(r2[1], r2[2], by = 3), lwd = c(1, 0.5), add = T)
+#  dev.off()
 }
 setwd("..")

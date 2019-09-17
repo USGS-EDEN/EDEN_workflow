@@ -282,8 +282,8 @@ for (i in 1:length(file_surf)) {
   surf.nc<-nc_open(paste0("../surfaces/",file_surf[i]))
   stage<-ncvar_get(surf.nc,"stage")
   t<-ncvar_get(surf.nc,"time")
-  if (i < 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
-  if (i == 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
+  if (i < 7) time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t
+  if (i == 7) time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t
   nc_close(surf.nc)
   for (j in 1:length(time)) {
     for (k in 1:length(trans_pix$X)) {

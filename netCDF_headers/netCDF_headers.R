@@ -23,36 +23,21 @@ unlink("./surfaces/*.nc")
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
 
 ftp_dir <- "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/"
-wl_file <- paste0(cur_qtr, ".nc")
 d_file <- paste0("d", cur_qtr, ".nc")
-err <- try (download.file(paste0(ftp_dir, wl_file), paste0("./surfaces/", wl_file)))
 err <- try (download.file(paste0(ftp_dir, d_file), paste0("./surfaces/", d_file)))
 
 d.nc <- nc_open(paste0("./surfaces/", d_file), write = T)
 ncvar_rename(d.nc, "stage", "depth")
-ncatt_put(d.nc, "stage", "long_name", "depth")
+ncatt_put(d.nc, "stage", "long_name", "Water Depth (cm)")
 depth <- ncvar_get(d.nc, "stage")
 # Optional step to set < 0 values to 0
 #depth[depth < 0] <- 0
 #ncvar_put(d.nc, "stage", depth)
 max <- max(depth, na.rm = T)
 min <- min(depth, na.rm = T)
-ncatt_put(d.nc, "transverse_mercator", "semi_major_axis", 6378137)
-ncatt_put(d.nc, "transverse_mercator", "inverse_flattening", 298.257222101, "double")
 ncatt_put(d.nc, "stage", "min", min, "double")
 ncatt_put(d.nc, "stage", "max", max, "double")
 nc_close(d.nc)
 
-wl.nc <- nc_open(paste0("./surfaces/", wl_file), write = T)
-stage <- ncvar_get(wl.nc, "stage")
-max <- max(stage, na.rm = T)
-min <- min(stage, na.rm = T)
-ncatt_put(wl.nc, "transverse_mercator", "semi_major_axis", 6378137)
-ncatt_put(wl.nc, "transverse_mercator", "inverse_flattening", 298.257222101, "double")
-ncatt_put(wl.nc, "stage", "min", min, "double")
-ncatt_put(wl.nc, "stage", "max", max, "double")
-nc_close(wl.nc)
-
-err <- try (ftpUpload(paste0("./surfaces/", wl_file), paste0(ftp_dir, wl_file)))
 err <- try (ftpUpload(paste0("./surfaces/", d_file), paste0(ftp_dir, "d", cur_qtr, "_fixed.nc")))
 setwd("..")
