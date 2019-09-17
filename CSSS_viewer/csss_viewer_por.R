@@ -9,7 +9,8 @@ for (i in 1:length(file_surf)) {
   surf.nc <- nc_open(paste0("../surfaces/", file_surf[i]))
   stage <- ncvar_get(surf.nc, "stage")
   t <- ncvar_get(surf.nc, "time")
-  time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
+  if (i < 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
+  if (i == 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
   nc_close(surf.nc)
   for (j in 1:length(sub)) {
     stage_sub <- stage[get(paste0("xmin_", sub[j])):get(paste0("xmax_", sub[j])), get(paste0("ymin_", sub[j])):get(paste0("ymax_", sub[j])), ]
@@ -50,7 +51,7 @@ for (i in 1:length(dt$date))
 write("}", "./output/por_stats.js", append = T)
 
 # Calc subarea annual stats (~3min)
-year <- data.frame(year=1991:2018)
+year <- data.frame(year=2014:2019)
 start_nest <- which(as.POSIXlt(time)$mon == 2 & as.POSIXlt(time)$mday == 1)
 end_nest <- which(as.POSIXlt(time)$mon == 6 & as.POSIXlt(time)$mday == 15)
 start_year <- which(as.POSIXlt(time)$yday == 0)
@@ -265,8 +266,8 @@ for (k in 5:length(file_surf)) {
 }
 
 # POR L31N transect plots
-trans_pix<-read.table("~/Desktop/R/six_tenths_transect/transect_pixel_utm.txt",header=T)
-trans_pix2<-read.table("~/Desktop/R/six_tenths_transect/transect2_pixel_utm.txt",header=T)
+trans_pix<-read.table("~/Desktop/R_old/six_tenths_transect/transect_pixel_utm.txt",header=T)
+trans_pix2<-read.table("~/Desktop/R_old/six_tenths_transect/transect2_pixel_utm.txt",header=T)
 for (i in 1:length(trans_pix$X)) {
   trans_pix$xcoord[i]<-which.min(abs(x-trans_pix$X[i]))
   trans_pix$ycoord[i]<-which.min(abs(y-trans_pix$Y[i]))
@@ -278,10 +279,11 @@ for (i in 1:length(trans_pix$X)) {
 # ~30 min
 for (i in 1:length(file_surf)) {
   print(file_surf[i])
-  surf.nc<-nc_open(paste0("~/Desktop/R/trexler_ponds/surfaces/",file_surf[i]))
+  surf.nc<-nc_open(paste0("../surfaces/",file_surf[i]))
   stage<-ncvar_get(surf.nc,"stage")
   t<-ncvar_get(surf.nc,"time")
-  time<-as.POSIXct(surf.nc$dim$time$units,format="days since %Y-%m-%dT%H:%M:%SZ")+86400*t
+  if (i < 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
+  if (i == 7) time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
   nc_close(surf.nc)
   for (j in 1:length(time)) {
     for (k in 1:length(trans_pix$X)) {
@@ -289,24 +291,24 @@ for (i in 1:length(file_surf)) {
       trans_pix2$wl[k]<-stage[trans_pix2$xcoord[k],trans_pix2$ycoord[k],j]
     }
     rn<-range(trans_pix$wl,trans_pix2$wl,trans_pix$dem,trans_pix2$dem,na.rm=T)
-    png(filename=paste0("~/Desktop/R/csss_viewer/transect/",format(time[j],'%Y%m%d'),".png"),width=1200,height=800,units="px",pointsize=12,bg="white",type="quartz")
+    png(filename=paste0("./images/transect/",format(time[j],'%Y%m%d'),".png"),width=1200,height=800,units="px",pointsize=12,bg="white",type="quartz")
     par(mar=c(5,4,4,5)+.1)
     plot(trans_pix$wl,type="l",col="blue",lwd=3,ylim=rn,main=paste("0.6 mile (east) transect for",format(time[j],'%m/%d/%Y')),xlab="North-to-south transect pixels",ylab="Water level (cm NAVD88)")
     lines(trans_pix$dem,lwd=3)
     legend("topleft",c("EDEN WL surface","EDEN DEM"),col=c("blue","black"),lty=1,lwd=3)
     dev.off()
-    jpeg(filename=paste0("~/Desktop/R/csss_viewer/transect_thumb/",format(time[j],'%Y%m%d'),".png"),width=240,height=160,units="px",pointsize=12,quality=100,bg="white",type="quartz")
+    jpeg(filename=paste0("./images/transect_thumb/",format(time[j],'%Y%m%d'),".png"),width=240,height=160,units="px",pointsize=12,quality=100,bg="white",type="quartz")
     par(mar=c(0,0,0,0))
     plot(trans_pix$wl,type="l",col="blue",lwd=2,ylim=rn)
     lines(trans_pix$dem,lwd=2)
     dev.off()
-    png(filename=paste0("~/Desktop/R/csss_viewer/transect2/",format(time[j],'%Y%m%d'),".png"),width=1200,height=800,units="px",pointsize=12,bg="white",type="quartz")
+    png(filename=paste0("./images/transect2/",format(time[j],'%Y%m%d'),".png"),width=1200,height=800,units="px",pointsize=12,bg="white",type="quartz")
     par(mar=c(5,4,4,5)+.1)
     plot(trans_pix2$wl,type="l",col="blue",lwd=3,ylim=rn,main=paste("2.1 mile (west) transect for",format(time[j],'%m/%d/%Y')),xlab="North-to-south transect pixels",ylab="Water level (cm NAVD88)")
     lines(trans_pix2$dem,lwd=3)
     legend("topleft",c("EDEN WL surface","EDEN DEM"),col=c("blue","black"),lty=1,lwd=3)
     dev.off()
-    jpeg(filename=paste0("~/Desktop/R/csss_viewer/transect2_thumb/",format(time[j],'%Y%m%d'),".png"),width=240,height=160,units="px",pointsize=12,quality=100,bg="white",type="quartz")
+    jpeg(filename=paste0("./images/transect2_thumb/",format(time[j],'%Y%m%d'),".png"),width=240,height=160,units="px",pointsize=12,quality=100,bg="white",type="quartz")
     par(mar=c(0,0,0,0))
     plot(trans_pix2$wl,type="l",col="blue",lwd=2,ylim=rn)
     lines(trans_pix2$dem,lwd=2)

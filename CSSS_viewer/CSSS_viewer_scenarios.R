@@ -1,8 +1,8 @@
 library (ncdf4)
 try (setwd("./CSSS_viewer"), silent = T)
 
-fls <- list.files("./input/", "^depth_")
-sc <- "ALTQ"
+fls <- list.files("./input/", "^depth_")[c(1:9, 14:18)]
+sc <- c("ALTH", "ALTN2", "ALTO", "ALTQ", "ALTK", "ALTL", "ALTN", "ECB19R", "ECB19RR", "W3RNL", "WALT1R", "WALT3R", "WECB", "WFWO")
 s.nc <- nc_open(paste0("./input/", fls[1]))
 x <- ncvar_get(s.nc, "x")
 y <- ncvar_get(s.nc, "y")
@@ -191,7 +191,7 @@ for (m in 1:length(fls)) {
     par(mar = c(0, 0, 0, 0))
     image(x, y2, h4[, 477:1, i], col = col, breaks = c(0, 138.2, 163, 200.3, 220.3, 400), axes = F, asp = 1)
     mask <- ifelse(sd >= 56.8, 1, NA)
-    image(x, y2, mask, col = rgb(0, 0, 0, 0.65), add = T)
+    image(x, y2, mask[, 477:1], col = rgb(0, 0, 0, 0.65), add = T)
     text(x[58], y2[47], year$year[i] + 4, pos = 4)
     dev.off()
     png(paste0("./images/hydrop_", sc[m], "/four_year_hydroperiod_", year$year[i] + 4, "_sd_", sc[m], ".png"), width = 754, height = 1015, bg = "transparent", type = "quartz")
