@@ -1,6 +1,13 @@
 # EDEN Workflow
 
-EDEN Workflow is an attempt to reproduce the EDEN daily (and other) workflows, including ADAM input, EDENdb data upload, EDEN model input, EDEN surface creation, ERTP duration hydrographs, CSSS & WADEM webapp data (including scenarios), CoastalEDEN, and EDENdb rainfall and ET data workflows in an R environment.
+EDEN Workflow is a repository to reproduce the EDEN daily (and other) workflows, including ADAM input data collation, EDENdb data processing and upload, EDEN model input data generation, EDEN surface creation and NetCDF production, ERTP duration hydrograph creations, CSSS & WADEM webapp data generation (including scenarios), CoastalEDEN, and EDENdb rainfall and ET data workflows.
+
+## Installation
+
+EDEN_workflow will most easily run within RStudio as a "project" -- this will ensure that the correct folder structure is used, that updates can be pulled down from GitHub, etc.
+- Within RStudio, select File -> New Project -> Version Control -> Git. Enter "https://github.com/USGS-EDEN/EDEN_workflow.git", and select "Create Project".
+- To pull down the latest updates from GitHub, from within the RStudio EDEN_workflow project select the Git tab in the upper right pane and press the Pull button.
+- Scripts requiring reading of the EDEN database (e.g., ADAM_input.R, EDENv3.R, etc.) require credentials stored in a usr_pwd.R file. Sripts requiring writing to the EDEN database (e.g., EDEN_upload.R, coastal_EDEN.R, etc.) require credentials stored in a admin_pwd.R file. Contact bmccloskey@usgs.gov for these login credentials.
 
 ## Description of Workflow folders
 
@@ -14,7 +21,7 @@ _ **EDENv3:** (runs daily at 12:30) Run the EDEN model and create .nc and geotif
 - **CSSS_viewer**: (runs daily at 2:30PM) Generate the CSSS webapp data, statistics, images, and report.
 - **ERTP_hydrographs** (runs daily at 2:35PM) Produce gage and tree island ERTP duration hydrograph plots and data, transfer files, and prepare alert email.
 - **WADEM**: (runs daily at 2:45PM) Generate the WADEM webapp data, images, graphs.
-_ **csss_get.sh:** (on stpweb1, runs daily at 2:59PM) Retrieve CSSS and WADEM files to webserver. **(To do: Convert code to R and add to repo.)**
+- **csss_get.sh:** (on stpweb1, runs daily at 2:59PM) Retrieve CSSS and WADEM files to webserver. **(To do: Convert code to R and add to repo.)**
 _ **duration_hydrographs_get.sh:** (on stpweb1, runs daily at 4:30PM) Retrieve ERTP files to webserver. **(To do: Convert code to R and add to repo.)**
 - **EDENdb_backup_restore:** Replace selcted EDENdb timestamps with backup .CSV data.
 - **et_rainfall_processing:** Download monthly rainfall files and annual evapotranspiration data files, process, and populate EDENdb. Also add historic rainfall and ET data to EDENdb for newly-added EDEN gages.
