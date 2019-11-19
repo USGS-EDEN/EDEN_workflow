@@ -195,7 +195,7 @@ for (i in length(range):1) {
     for (j in seq(2, dim(db2)[2], by = 2)) {
       # Calculate flags
       flag <- ifelse(length(which(db2[, j + 1] == "M")) == length(db2[, j + 1]) | length(which(is.na(db2[, j]))) == length(db2[, j]), "M", ifelse(median(db2[, j], na.rm=T) < gages$dry_elevation[j / 2], "D", ifelse(length(which(is.na(db2[, j + 1]))) > 0, "O" ,ifelse(db2$datetime < gages$hindcast[j / 2], "H", "E"))))
-      if (is.na(median(db2[, j], na.rm=T))) val <- "NULL" else val <- median(db2[, j], na.rm = T)
+      if (is.na(median(db2[, j], na.rm = T))) val <- "NULL" else val <- median(db2[, j], na.rm = T)
       query <- paste0(query, ", `", names(db2)[j], "` = ", val, ", `", names(db2)[j + 1] ,"` = '", flag, "'")
     }
   if (date_check$ct == 1)
@@ -210,9 +210,9 @@ for (i in 1:length(range)) {
   date_check <- dbGetQuery(con, paste0("select count(datetime) as ct from stage_test where datetime = '", range[i], "'"))
   if (date_check$ct == 0)
     dbSendQuery(con, paste0("insert into stage_test (datetime) values ('", range[i], "')"))
-  date_check <- dbGetQuery(con, paste0("select count(datetime) as ct from dbhydro_stage where datetime = '", range[i], "'"))
+  date_check <- dbGetQuery(con, paste0("select count(datetime) as ct from supp_stage where datetime = '", range[i], "'"))
   if (date_check$ct == 0)
-    dbSendQuery(con, paste0("insert into dbhydro_stage (datetime) values ('", range[i], "')"))
+    dbSendQuery(con, paste0("insert into supp_stage (datetime) values ('", range[i], "')"))
 }
 range <- dbGetQuery(con, paste0("select date from stage_daily where date > 20190801 order by date"))
 range <- as.Date(range$date)
@@ -220,8 +220,8 @@ for (i in 1:length(range)) {
   date_check <- dbGetQuery(con, paste0("select count(date) as ct from stage_daily_test where date = '", range[i], "'"))
   if (date_check$ct == 0)
     dbSendQuery(con, paste0("insert into stage_daily_test (date) values ('", range[i], "')"))
-  date_check <- dbGetQuery(con, paste0("select count(date) as ct from dbhydro_stage_daily where date = '", range[i], "'"))
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from supp_stage_daily where date = '", range[i], "'"))
   if (date_check$ct == 0)
-    dbSendQuery(con, paste0("insert into dbhydro_stage_daily (date) values ('", range[i], "')"))
+    dbSendQuery(con, paste0("insert into supp_stage_daily (date) values ('", range[i], "')"))
 }
 setwd("..")
