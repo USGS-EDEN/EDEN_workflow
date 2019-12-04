@@ -14,8 +14,10 @@ print("These libraries must be installed: RMySQL, RCurl")
 library (RMySQL)
 library (RCurl)
 
-# set number of days here to upload:
-days <- 4
+# Command line arguments for number of days to load
+days <- as.numeric(commandArgs(trailingOnly = T))
+if (length(days) != 1)
+  days <- 4
 
 try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")

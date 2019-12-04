@@ -31,7 +31,7 @@ gages$param[gages$param == ""] <- "99999"
 gages$dd[gages$dd == 0] <- "9"
 
 # Command line arguments for number of days to load
-lday <- commandArgs(trailingOnly = T)
+lday <- as.numeric(commandArgs(trailingOnly = T))
 if (length(lday) == 0)
   lday <- c(7, 4, 1)
 
