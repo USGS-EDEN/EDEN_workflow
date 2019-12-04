@@ -42,7 +42,7 @@ yr <- format(Sys.Date(), "%Y")
 outfile <- paste0("./output/data_uv_", yr, qtr, ".txt")
 write(header, outfile)
 # Manually calculate first and last day of quarter
-days <- c(as.Date("2017-10-01"), as.Date("2018-09-30"))
+days <- c(as.Date("2019-07-01"), as.Date("2019-09-30"))
 # range: include all of final day for quarterly/annual
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
 end <- strptime(paste(days[2], "23:54:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -89,7 +89,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
 report <- paste0(report, "USGS gages with ", days[1], " values: ", cnt, ".\n")
 
 # Enter filenames to download quarterly/annual file to local working directory
-enp_file <- "enp_20190910_0848"
+enp_file <- "enp_20191118_1300"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
   report <- paste0(report, "ENP quarterly input file _NOT_ downloaded.\n")
@@ -123,7 +123,7 @@ for (i in which(db$operating_agency_id == 1))
 # Report first day of quarter's ENP gage count
 report <- paste0(report, "ENP gages with ", days[1], " values: ", length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == days[1])), ".\n")
 
-sfwmd_file <- "sfwmd_20190912_0949"
+sfwmd_file <- "sfwmd_qtr_20191115_0626"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
   report <- paste0(report, "SFWMD quarterly input file _NOT_ downloaded.\n")
@@ -168,7 +168,8 @@ to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.g
 system(paste0("(echo 'Subject: ", outfile, " upload report\n
 ", report, "';uuencode ", outfile, ".zip ", outfile, ".zip;uuencode ./reports/gage_count.png gage_count.png) | /usr/sbin/sendmail ", to))
 
-gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, param, ts_id, vertical_datum_id from station where edenmaster_new = 1 group by station_name order by station_name_web")
+gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, param, ts_id, vertical_datum_id from station where station_name_web != 'Alligator_Creek' and station_name_web != 'Barron_River' and station_name_web != 'East_Side_Creek' and station_name_web != 'G-3777' and station_name_web != 'Manatee_Bay_Creek' and station_name_web != 'Raulerson_Brothers_Canal' group by station_name order by station_name_web")
+write("", "./output/marryup.txt", sep="\t")
 usgs_gages <- gages[gages$operating_agency_id == 4, ]
 for (i in 1:length(usgs_gages$station_name_web)) {
   url_s <- paste0("https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=", usgs_gages$usgs_nwis_id[i], "&startDT=", days[1], "&endDT=", days[1], "&parameterCd=", usgs_gages$param[i], "&access=3")
