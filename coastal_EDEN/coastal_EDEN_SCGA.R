@@ -148,6 +148,7 @@ for (i in 1:dim(gages)[1]) {
   csi <- CSIcalc(sal)
   CSIstack(csi, "./csi/", T, F, F, "bottom")
   CSIplot(csi, "./csi", "bottom")
+  CSIwrite(csi, "./csi")
   for (l in 12:dim(csi)[1]) {
     d1 <- d2 <- as.Date(paste0(rownames(csi)[l], "-01"))
     m <- format(d2, format = "%m")
@@ -233,4 +234,16 @@ write.csv(c, "./csi/csi_values.csv", row.names = F)
 to <- "bmccloskey@usgs.gov"
 system(paste0("echo 'Subject: CoastalEDENdb_sc_ga upload report
 ", report, "' | /usr/sbin/sendmail ", to))
+p <- paste0("`", gages$NWIS_ID, "_csi`, ", collapse = "")
+p <- substring(p, 1, nchar(p) - 2)
+q <- paste0("`", gages$NWIS_ID, "_csi` is NULL or ", collapse = "")
+q <- substring(q, 1, nchar(q) - 4)
+query <- paste0("select ", p, " from coastal_sc_ga where (", q, ") and date = '", days[2], "'")
+s <- dbGetQuery(con, query)
+if (length(which(is.na(s)))) {
+  to <- "bmccloskey@usgs.gov,rsyoung@usgs.gov"
+  t <- paste0(names(s)[which(is.na(s))], collapse = ", ")
+  system(paste0("echo 'Subject: CoastalEDENdb_sc_ga upload report: missing CSI values 
+The following gages have missing CSI values for ", days[2], ": ", t, "' | /usr/sbin/sendmail ", to))
+}
 setwd("..")

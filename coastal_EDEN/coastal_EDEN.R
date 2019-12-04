@@ -9,9 +9,7 @@
 
 print("These libraries must be installed: RMySQL, RCurl, CSI, zoo")
 # Required libraries. If not present, run:
-# install.packages("RMySQL")
-# install.packages("RCurl")
-# install.packages("zoo")
+# install.packages("RMySQL", "RCurl", "zoo")
 # devtools::install_github("USGS-R/CSI")
 library (RMySQL)
 library (RCurl)
@@ -145,11 +143,14 @@ sal <- dbGetQuery(con, query)
 #sal <- CSIinterp(sal)
 csi <- CSIcalc(sal)
 CSIstack(csi, "./csi/", T, F, F, leg = "bottom")
+CSIwrite(csi, "./csi")
 for (j in 1:dim(db)[1]) {
   err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked_thumb.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked_thumb.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI thumbnail transferred")
   err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_stacked/", db$station_name_web[j], "_stacked.png"), .opts = list(forbid.reuse = 1)))
   if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI full-size NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI full-sized transferred")
+  err <- try (ftpUpload(paste0("./csi/", db$station_name_web[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/coastal_eden/csi_values/", db$station_name_web[j], ".csv"), .opts = list(forbid.reuse = 1)))
+  if (inherits(err, "try-error")) report <- paste0(report, "\n", db$station_name_web[j], " CSI values NOT transferred") else report <- paste0(report, "\n", db$station_name_web[j], " CSI values transferred")
 }
 
 col <- c("tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
