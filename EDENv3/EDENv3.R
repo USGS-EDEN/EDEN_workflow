@@ -50,7 +50,7 @@ output_nc_d <- paste0("./output/d", yr, "_q", q, ".nc")
 output_tif <- paste0("./output/s_", gsub("-", "", quarter), ".tif")
 edenmaster <- edenGages(quarter) # Create edenmaster data.frame
 gage_data <- gageData(edenmaster, quarter) # Create list contining daily gage data
-eden <- eden_d <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
+eden <- lapply(gage_data, interpolate_gages, edenmaster) # Run interpolation for each day
 
 # Set up DEM file
 if (!file.exists("./input/eden_dem_cm_oc11.nc")) {
@@ -58,20 +58,8 @@ if (!file.exists("./input/eden_dem_cm_oc11.nc")) {
   unzip("./input/eden_dem_cm_oc11.zip", "eden_dem_cm_oc11.nc", exdir = "./input")
 }
 dem.nc <- nc_open("./input/eden_dem_cm_oc11.nc")
-x <- ncvar_get(dem.nc, "x")
-y <- ncvar_get(dem.nc, "y")
 dem <- ncvar_get(dem.nc, "dem")
 nc_close(dem.nc)
-
-for (i in 1:length(eden_d)) {
-  print(quarter[i])
-  for (j in 1:dim(eden_d[[i]])[1]) {
-    xj <- which(x == eden_d[[i]]$X_COORD[j])
-    yj <- which(y == eden_d[[i]]$Y_COORD[j])
-    eden_d[[i]]$stage[j] <- eden_d[[i]]$stage[j] - dem[xj, yj]
-    eden_d[[i]]$stage[eden_d[[i]]$stage < 0] <- 0
-  }
-}
 
 eden_nc(eden, quarter, output_nc)
 try (ftpUpload(output_nc, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc, 10)), .opts = list(forbid.reuse = 1)))
@@ -80,11 +68,17 @@ for (i in 1:length(eden)) {
   eden_raster(eden[[i]], output_tif[i])
   try (ftpUpload(output_tif[i], paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_tif[i], 10)), .opts = list(forbid.reuse = 1)))
 }
-eden_nc(eden_d, quarter, output_nc_d)
+eden_nc(eden, quarter, output_nc_d)
 d.nc <- nc_open(output_nc_d, write = T)
 ncvar_rename(d.nc, "stage", "depth")
 ncatt_put(d.nc, "stage", "long_name", "Water Depth (cm)")
+d <- ncvar_get(d.nc, "stage")
+d <- sweep(d, c(1, 2), dem, "-")
+d[d < 0] <- 0
+ncvar_put(d.nc, "stage", d)
 nc_close(d.nc)
 try (ftpUpload(output_nc_d, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc_d, 10)), .opts = list(forbid.reuse = 1)))
-
+# Hack to transfer to a directory retrievable by the THREDDS server
+file.copy(output_nc, "~/Desktop/RemoteDesktop/", overwrite = T)
+file.copy(output_nc_d, paste0("~/Desktop/RemoteDesktop/", yr, "_q", q, "_depth.nc"), overwrite = T)
 setwd("..")
