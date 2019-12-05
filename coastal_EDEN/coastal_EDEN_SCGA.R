@@ -9,7 +9,7 @@
 
 print("These libraries must be installed: RMySQL, RCurl, dplyr, CSI")
 # Required libraries. If not present, run:
-# install.packages("RMySQL", "RCurl", "dplyr")
+# install.packages(c("RMySQL", "RCurl", "dplyr"))
 # devtools::install_github("USGS-R/CSI")
 library (RMySQL)
 library (RCurl)

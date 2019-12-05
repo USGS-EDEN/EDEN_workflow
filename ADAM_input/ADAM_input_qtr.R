@@ -9,9 +9,7 @@
 
 print("These libraries must be installed: RMySQL, RCurl, stringr")
 # Required libraries. If not present, run:
-# install.packages("RMySQL")
-# install.packages("RCurl")
-# install.packages("stringr")
+# install.packages(c("RMySQL", "RCurl", "stringr"))
 library (RMySQL)
 library (RCurl)
 library (stringr)
