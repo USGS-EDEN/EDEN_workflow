@@ -9,7 +9,7 @@
 
 print("These libraries must be installed: ncdf4, RColorBrewer, RCurl")
 # Required libraries. If not present, run:
-# install.packages("ncdf4", "RColorBrewer", "RCurl")
+# install.packages(c("ncdf4", "RColorBrewer", "RCurl"))
 library (ncdf4)
 library (RColorBrewer)
 library (RCurl)
@@ -35,15 +35,15 @@ pre_qtr <- paste0(as.POSIXlt(Sys.Date() - 90)$year + 1900, "_", tolower(quarters
 err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_nc.zip"), paste0("./surfaces/", cur_qtr, ".zip")))
 unzip(paste0("./surfaces/", cur_qtr, ".zip"), exdir = "./surfaces")
 file.rename(paste0("./surfaces/", cur_qtr, "_v3rt.nc"), paste0("./surfaces/", cur_qtr, ".nc"))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v2rt_nc.zip"), paste0("./surfaces/", pre_qtr, ".zip")))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v3rt_nc.zip"), paste0("./surfaces/", pre_qtr, ".zip")))
 unzip(paste0("./surfaces/", pre_qtr, ".zip"), exdir = "./surfaces")
-file.rename(paste0("./surfaces/", pre_qtr, "_v2rt.nc"), paste0("./surfaces/", pre_qtr, ".nc"))
+file.rename(paste0("./surfaces/", pre_qtr, "_v3rt.nc"), paste0("./surfaces/", pre_qtr, ".nc"))
 err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_depth_nc.zip"), paste0("./surfaces/", cur_qtr, ".zip")))
 unzip(paste0("./surfaces/", cur_qtr, ".zip"), exdir = "./surfaces")
 file.rename(paste0("./surfaces/", cur_qtr, "_v3rt_depth.nc"), paste0("./surfaces/", cur_qtr, "_depth.nc"))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v2rt_depth_nc.zip"), paste0("./surfaces/", pre_qtr, ".zip")))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v3rt_depth_nc.zip"), paste0("./surfaces/", pre_qtr, ".zip")))
 unzip(paste0("./surfaces/", pre_qtr, ".zip"), exdir = "./surfaces")
-file.rename(paste0("./surfaces/", pre_qtr, "_v2rt_depth.nc"), paste0("./surfaces/", pre_qtr, "_depth.nc"))
+file.rename(paste0("./surfaces/", pre_qtr, "_v3rt_depth.nc"), paste0("./surfaces/", pre_qtr, "_depth.nc"))
 unlink("./surfaces/*.zip")
 
 s.nc <- nc_open(paste0("./surfaces/", cur_qtr, ".nc"))

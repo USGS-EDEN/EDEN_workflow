@@ -16,12 +16,12 @@ EDEN_workflow will most easily run within RStudio as a "project" -- this will en
 00 03 * * * cd ~/EDEN_workflow/; R --vanilla < coastal_EDEN/coastal_EDEN.R > coastal_EDEN/coastal_EDEN.log 2>&1
 ```
 (Include `PATH=/usr/bin:/bin:/usr/local/bin` at start of crontab file, or give path to R explicitly.)
-- **coastal_hydrograph_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 8:30AM) Retrieve CoastalEDEN FL and SC/GA files to webserver.
+- **coastal_hydrograph_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 8:30AM) Retrieves CoastalEDEN FL and SC/GA files to webserver.
 - **ADAM_input:** (runs daily at 7:15AM) Download of daily data from USGS, SFWMD, and ENP; collating; and formatting for ADAM input. Can be modified to generate arbitrary length multiday files (by default runs 7-, 4-, and 1-day files), with either local or remote (eFTP) source data files, via script or command line parameters (e.g., `R --vanilla --args 7 4 1 < ADAM_input/ADAM_input.R` where "7 4 1" is a list of n-day files to generate).
 - **EDENdb_upload:** (runs daily at 12:24PM) Retrieve daily output from ADAM, process, load into EDENdb, generate annotated daily median files, and update EDENdb daily values table. Seven-day review on Tuesdays; four-day review on all other days, via command line parameters: `--args 4`.
 - **EDENv3:** (runs daily at 12:30) Run the EDEN model and create .nc and geotiff files. Contains a workaround to transfer surfaces to a directory accessible to the THREDDS server.
 - **realtime_jpgs:** (runs daily at 2:20PM) Generate the surface, thumbnail, and contour images for the EDEN website.
-- **realtime_jpgs_get.sh:** (on stpweb1, runs daily at 2:30PM) Retrieves realtime surface jpgs to the web server.
+- **realtime_jpgs_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 2:30PM) Retrieves realtime surface jpgs to the web server.
 - **CSSS_viewer**: (runs daily at 2:30PM) Generate the CSSS webapp data, statistics, images, and report.
 - **ERTP_hydrographs** (runs daily at 2:35PM) Produce gage and tree island ERTP duration hydrograph plots and data, transfer files, and prepare alert email.
 - **WADEM**: (runs daily at 2:45PM) Generate the WADEM webapp data, images, graphs.
