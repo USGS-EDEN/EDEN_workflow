@@ -60,12 +60,12 @@ for (i in 1:length(file_surf)) {
 surf.nc <- nc_open(paste0("../surfaces/", file_surf[1]))
 stage <- ncvar_get(surf.nc, "stage")
 t <- ncvar_get(surf.nc, "time")
-time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t + 14
+time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t + 14
 nc_close(surf.nc)
 surf.nc <- nc_open(paste0("../surfaces/", file_surf[2]))
 stage <- abind(stage, ncvar_get(surf.nc, "stage"))
 t <- ncvar_get(surf.nc, "time")
-time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t + 14, recursive = T))
+time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t + 14, recursive = T))
 nc_close(surf.nc)
 depth <- sweep(stage, c(1, 2), dem, "-")
 rr <- (depth[, , 15:dim(depth)[3]] - depth[, , 1:(dim(depth)[3] - 14)]) / 14
