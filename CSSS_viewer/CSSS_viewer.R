@@ -9,12 +9,7 @@
 
 print("These libraries must be installed: ncdf4, abind, RCurl, grid, gridExtra, lattice")
 # Required libraries. If not present, run:
-# install.packages("ncdf4")
-# install.packages("abind")
-# install.packages("RCurl")
-# install.packages("grid")
-# install.packages("gridExtra")
-# install.packages("lattice")
+# install.packages(c("ncdf4", "abind", "RCurl", "grid", "gridExtra", "lattice"))
 library (ncdf4)
 library (abind)
 library (RCurl)
