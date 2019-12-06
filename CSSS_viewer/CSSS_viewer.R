@@ -37,14 +37,13 @@ nc_close(dem.nc)
 
 # Set up WL files
 cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
-err <- try (download.file(paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", cur_qtr, ".nc"), paste0("../surfaces/", cur_qtr, ".nc")))
-#err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v2rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
-#unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
-#file.rename(paste0("../surfaces/", cur_qtr, "_v2rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
+unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
+file.rename(paste0("../surfaces/", cur_qtr, "_v3rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 pre_qtr <- paste0(as.POSIXlt(Sys.Date() - 90)$year + 1900, "_", tolower(quarters(Sys.Date() - 90)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v2rt_nc.zip"), paste0("../surfaces/", pre_qtr, ".zip")))
+err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", pre_qtr, ".zip")))
 unzip(paste0("../surfaces/", pre_qtr, ".zip"), exdir = "../surfaces")
-file.rename(paste0("../surfaces/", pre_qtr, "_v2rt.nc"), paste0("../surfaces/", pre_qtr, ".nc"))
+file.rename(paste0("../surfaces/", pre_qtr, "_v3rt.nc"), paste0("../surfaces/", pre_qtr, ".nc"))
 unlink("../surfaces/*.zip")
 
 # Define subareas
@@ -83,8 +82,7 @@ for (i in 1:length(surf_files)) {
   s.nc <- nc_open(surf_files[i])
   s <- ncvar_get(s.nc, "stage", collapse_degen = F)
   t <- ncvar_get(s.nc, "time")
-  if (i == 1) time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
-  if (i == 2) time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
+  time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
   nc_close(s.nc)
   for (j in 1:length(sub)) {
     d_sub <- s[get(paste0("xmin_", sub[j])):get(paste0("xmax_", sub[j])), get(paste0("ymin_", sub[j])):get(paste0("ymax_", sub[j])), ]
