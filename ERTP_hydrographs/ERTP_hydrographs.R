@@ -9,9 +9,7 @@
 
 print("These libraries must be installed: ncdf4, RCurl, RMySQL")
 # Required libraries. If not present, run:
-# install.packages("ncdf4")
-# install.packages("RCurl")
-# install.packages("RMySQL")
+# install.packages(c("ncdf4", "RCurl", "RMySQL"))
 library (ncdf4)
 library (RCurl)
 library (RMySQL)

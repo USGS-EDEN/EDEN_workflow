@@ -23,13 +23,13 @@ EDEN_workflow will most easily run within RStudio as a "project" -- this will en
 - **realtime_jpgs:** (runs daily at 2:20PM) Generate the surface, thumbnail, and contour images for the EDEN website.
 - **realtime_jpgs_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 2:30PM) Retrieves realtime surface jpgs to the web server.
 - **CSSS_viewer**: (runs daily at 2:30PM) Generate the CSSS webapp data, statistics, images, and report.
+- **csss_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 2:59PM) Retrieve CSSS and WADEM files to webserver.
 - **ERTP_hydrographs** (runs daily at 2:35PM) Produce gage and tree island ERTP duration hydrograph plots and data, transfer files, and prepare alert email.
 - **WADEM**: (runs daily at 2:45PM) Generate the WADEM webapp data, images, graphs.
-- **csss_get.sh:** (on stpweb1, runs daily at 2:59PM) Retrieve CSSS and WADEM files to webserver. **(To do: Convert code to R and add to repo.)**
-- **duration_hydrographs_get.sh:** (on stpweb1, runs daily at 4:30PM) Retrieve ERTP files to webserver. **(To do: Convert code to R and add to repo.)**
-- **EDENdb_backup_restore:** Replace selcted EDENdb timestamps with backup .CSV data.
-- **et_rainfall_processing:** Download monthly rainfall files and annual evapotranspiration data files, process, and populate EDENdb. Also add historic rainfall and ET data to EDENdb for newly-added EDEN gages.
+- **duration_hydrographs_get.sh:** (on stpweb1 at `/export1/htdocs/eden/programs`, runs daily at 4:30PM) Retrieve ERTP files to webserver.
 
 ### Irregular/infrequent workflows
+- **EDENdb_backup_restore:** Replace selcted EDENdb timestamps with backup .CSV data.
+- **et_rainfall_processing:** Download monthly rainfall files and annual evapotranspiration data files, process, and populate EDENdb. Also add historic rainfall and ET data to EDENdb for newly-added EDEN gages.
 - **CSSS_scenarios**: Generate the CSSS webapp data, images, graphs for CSSS hypothetical scenarios.
 - **WADEM_scenarios**: Generate the WADEM webapp data, images, graphs for WADEM hypothetical scenarios.

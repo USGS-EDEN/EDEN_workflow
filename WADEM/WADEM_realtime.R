@@ -9,9 +9,7 @@
 
 print("These libraries must be installed: ncdf4, abind, RCurl")
 # Required libraries. If not present, run:
-# install.packages("ncdf4")
-# install.packages("abind")
-# install.packages("RCurl")
+# install.packages(c("ncdf4", "abind", "RCurl"))
 library (ncdf4)
 library (abind)
 library (RCurl)
