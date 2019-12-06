@@ -13,15 +13,16 @@
 # US Geological Survey
 #--------------
 
-print("These libraries must be installed: RMySQL, geoR, geospt, raster, reshape2, RCurl")
+print("These libraries must be installed: RMySQL, geoR, geospt, raster, reshape2, RCurl, rgdal")
 # Required libraries. If not present, run:
-# install.packages(c("RMySQL", "geoR", "geospt", "raster", "reshape2", "RCurl"))
+# install.packages(c("RMySQL", "geoR", "geospt", "raster", "reshape2", "RCurl", "rgdal"))
 library (RMySQL)
 library (geoR)
 library (geospt)
 library (raster)
 library (reshape2)
 library (RCurl)
+library (rgdal)
 
 try (setwd("./EDENv3"), silent = T)
 source("./netCDF_IO_v3.1.R")
