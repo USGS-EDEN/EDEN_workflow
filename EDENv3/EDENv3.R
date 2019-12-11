@@ -80,6 +80,6 @@ ncvar_put(d.nc, "stage", d)
 nc_close(d.nc)
 try (ftpUpload(output_nc_d, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc_d, 10)), .opts = list(forbid.reuse = 1)))
 # Hack to transfer to a directory retrievable by the THREDDS server
-file.copy(output_nc, "~/Desktop/RemoteDesktop/", overwrite = T)
-file.copy(output_nc_d, paste0("~/Desktop/RemoteDesktop/", yr, "_q", q, "_depth.nc"), overwrite = T)
+file.copy(output_nc, "~/Desktop/RemoteDesktop/surfaces/", overwrite = T)
+file.copy(output_nc_d, paste0("~/Desktop/RemoteDesktop/depths/", yr, "_q", q, "_depth.nc"), overwrite = T)
 setwd("..")
