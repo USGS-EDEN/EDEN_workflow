@@ -51,13 +51,13 @@ for (i in 1:length(params$column)) {
   } else {
     # Remove data descriptor header row
     tmp <- tmp[2:dim(tmp)[1], ]
-    # Remove rows with "_Eqp" flag
-    if (any(apply(tmp, 1, function (x) any(grepl("_Eqp", x)))))
-      tmp <- tmp[-which(apply(tmp, 1, function (x) any(grepl("_Eqp", x)))), ]
     # URLs with no returned data
     if (tmp[, 1] == "") {
       report <- paste0(report, params$column[i], " missing\n")
     } else {
+      # Remove rows with "_Eqp" flag
+      if (length(grep("_Eqp", tmp[, 5])) != 0)
+        tmp <- tmp[-grep("_Eqp", tmp[, 5]), ]
       # Convert timestamps; shift DST
       tmp$datetime <- as.POSIXct(tmp$datetime, tz = "EST", format = "%Y-%m-%d %H:%M")
       tmp$datetime <- as.POSIXct(ifelse(tmp$tz_cd == "EDT", tmp$datetime - 3600, tmp$datetime), tz = "EST", origin = "1970-01-01")
@@ -117,7 +117,7 @@ for (i in 1:dim(params)[1]) {
   dev.off()
   jpeg(paste0("./images/", params$column[i], "_full.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
   plot(db2$date, db2$avg, type = "n", xlab = "Month of year", ylab = lab, ylim = range(db2$avg, na.rm = T), xaxt = "n", main = paste(c("Gage", tmp[-length(tmp)]), collapse = " "))
-  axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 2:0, hadj = -1.5)
+  axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 3:0, hadj = -1.5)
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
   abline(v = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], lty = "dashed", col = "black")
   lines(db2$date, db2$avg, lwd = 3)
