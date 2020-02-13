@@ -44,7 +44,10 @@ subareas_aniso <- lapply(subareas_aniso, setNames, c("x_aniso", "y_aniso"))
 yr <- strftime(Sys.Date() - 1, "%Y")
 q <- (as.numeric(strftime(Sys.Date() - 1, "%m")) - 1) %/% 3 + 1
 st <- as.Date(paste(yr, switch(q, "01", "04", "07", "10"), "01", sep = "-"))
+# For realtime:
 en <- Sys.Date() - 1
+# For full quarters:
+#en <- as.Date(paste(yr, switch(q, "03", "06", "09", "12"), switch(q, "31", "30", "30", "31"), sep = "-"))
 quarter <- seq(st, en, "days")
 output_nc <- paste0("./output/", yr, "_q", q, ".nc")
 output_nc_d <- paste0("./output/d", yr, "_q", q, ".nc")
@@ -80,6 +83,17 @@ ncvar_put(d.nc, "stage", d)
 nc_close(d.nc)
 try (ftpUpload(output_nc_d, paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", substring(output_nc_d, 10)), .opts = list(forbid.reuse = 1)))
 # Hack to transfer to a directory retrievable by the THREDDS server
-file.copy(output_nc, "~/Desktop/RemoteDesktop/surfaces/", overwrite = T)
-file.copy(output_nc_d, paste0("~/Desktop/RemoteDesktop/depths/", yr, "_q", q, "_depth.nc"), overwrite = T)
+report <- ''
+if (!dir.exists("/Volumes/Users")) {
+  #system("open 'smb://IGSAFPESAS022-dmz.er.usgs.gov/Users'")
+  report <- "No mount to THREDDS server found; please run EDENv3.R manually to mount drive with AD credentials.\n"
+}
+err <- file.copy(output_nc, "/Volumes/Users/bmcclosk/Desktop/surfaces/", overwrite = T)
+report <- if (!err) paste0(report, "WL surface file NOT transferred to THREDDS server\n") else paste0(report, "WL surface file transferred to THREDDS server\n")
+err <- file.copy(output_nc_d, paste0("/Volumes/Users/bmcclosk/Desktop/depths/", yr, "_q", q, "_depth.nc"), overwrite = T)
+report <- if (!err) paste0(report, "Depth surface file NOT transferred to THREDDS server\n") else paste0(report, "Depth surface file transferred to THREDDS server\n")
+report <- paste0(report, "Check that internal THREDDS transfer succeeded (runs at 1pm): https://sflthredds.er.usgs.gov/thredds/catalog/eden/catalog.html")
+to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov"
+system(paste0("echo 'Subject: THREDDS transfer ALERT
+", report, "' | /usr/sbin/sendmail ", to))
 setwd("..")
