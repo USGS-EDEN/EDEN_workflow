@@ -63,7 +63,9 @@ interpolate_gages <- function (gage_data, edenmaster) {
   ## Remove gages that don't have measurements for that day
   na_values <- sum(is.na(gages$median))
   print(paste("The number of missing gages on this day is:", na_values))
+  write(paste("The number of missing gages on this day is:", na_values), "~/Desktop/missing.txt", append=T)
   if (na_values) print(paste0("Missing data are from gage stations: ", paste(gages[is.na(gages$median), ]$gage, collapse = " ")))
+  if (na_values) write(paste0("Missing data are from gage stations: ", paste(gages[is.na(gages$median), ]$gage, collapse = " ")), "~/Desktop/missing.txt", append=T)
   gages <- na.omit(gages)
 
   ## --------------------------------------------------------------------------
@@ -122,6 +124,7 @@ edenGages <- function (quarter) {
   gage_query <- paste(gage_query, "group by station_name_web")
   edenmaster <- suppressWarnings(dbGetQuery(con, gage_query))
   print(paste("edenmaster list generated for", surf_qtr))
+  write(paste("edenmaster list generated for", surf_qtr), "~/Desktop/missing.txt", append=T)
   
   return (edenmaster)
 }
@@ -132,6 +135,7 @@ gageData <- function (edenmaster, quarter) {
   gage_data <- setNames(replicate(length(quarter), data.frame()), quarter)
   for (i in 1:length(quarter)) {
     print(paste("retrieving EDENdb data for", quarter[i]))
+    write(paste("retrieving EDENdb data for", quarter[i]), "~/Desktop/missing.txt", append=T)
     data_query <- paste0("select `stage_", edenmaster$station_name_web, "`+", edenmaster$conv, " as stage from stage where datetime >= ", format(quarter[i], "%Y%m%d010000"), " and datetime < ", format(quarter[i] + 1, "%Y%m%d000001"), " order by datetime")
     dt <- data.frame(gage = edenmaster$station_name_web, median = NA)
     for (j in 1:length(data_query))
@@ -195,7 +199,59 @@ eden_nc <- function (interp_list, date_range, output_file) {
   
   closeNetCDF(nc_out) 
 }
-
+eden_nc_50m <- function (interp_list, date_range, output_file) {
+  # Find min and max for netCDF attributes
+  depth_min <- min(unlist(lapply(interp_list, function (df) min(df$stage, na.rm = T))))
+  depth_max <- max(unlist(lapply(interp_list, function (df) max(df$stage, na.rm = T))))
+  
+  ## -------------------------------------------------------------------------
+  # Set up netCDF header info 
+  xDim            <- 287*8
+  yDim            <- 405*8
+  cell_size       <- 50
+  extent          <- c(463225, 577975, 2951975, 2790025)
+  out_layer       <- "stage"
+  long_layer_name <- "Water Stage (cm)"
+  out_units       <- "cm"
+  out_prec        <- "float"
+  background      <- NaN                         
+  source_name     <- "EDENv3.R"
+  institution     <- "USGS"
+  qaqc            <- "under review"
+  comments        <- "Product derived from RBF interpolation of gages over the EDEN extent"
+  
+  nc_out <- createNetCDFfile(out.name = output_file,
+                             layer.name = out_layer,
+                             units = out_units,
+                             prec = out_prec,
+                             long.name = long_layer_name,
+                             daily = T,
+                             extent = extent,
+                             cell.size = cell_size,
+                             fill.value = background,
+                             source.name = source_name,
+                             institution = institution,
+                             qaqc = qaqc,
+                             comments = comments,
+                             start.dateStr = min(date_range), 
+                             t.size = length(date_range),
+                             layer.min = depth_min,
+                             layer.max = depth_max
+  )
+  
+  # Convert df of interp to a matrix & export as netcdf
+  for(j in 1:length(date_range)){ # j <- 1
+    print(paste("Day ", j, " of ", length(date_range)))
+    
+    dt <- interp_list[[j]]
+    # create matrix for netcdf
+    out_mat <- acast(dt, X_COORD ~ Y_COORD, value.var = out_layer)
+    
+    vec2nc(nc_out, out_mat, out_layer, j)
+  }
+  
+  closeNetCDF(nc_out) 
+}
 eden_raster <- function (eden_layer, output_tif) {
   coordinates(eden_layer) <- ~X_COORD + Y_COORD
   proj4string(eden_layer) <- CRS("+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
