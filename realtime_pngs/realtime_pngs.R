@@ -13,7 +13,7 @@ print("These libraries must be installed: ncdf4, RCurl")
 library (ncdf4)
 library (RCurl)
 
-try (setwd("./realtime_jpgs"), silent = T)
+try (setwd("./realtime_pngs"), silent = T)
 
 # Color palette
 stage.col <- c("#9E0142", "#A40843", "#AB1045", "#B21746", "#B91F48", "#C0274A", "#C72E4B", "#CE364D", "#D53E4F", "#D8434D", "#DC494C", "#E04F4A", "#E45549", "#E85B47", "#EC6146", "#F06744", "#F46D43", "#F57546", "#F67D4A", "#F7854E", "#F88D52", "#F99555", "#FA9D59", "#FBA55D", "#FDAE61", "#FDB466", "#FDBA6B", "#FDC070", "#FDC776", "#FDCD7B", "#FDD380", "#FDD985", "#FEE08B", "#FEE391", "#FEE798", "#FEEB9E", "#FEEFA5", "#FEF3AB", "#FEF7B2", "#FEFBB8", "#FFFFBF", "#FBFDBA", "#F8FCB5", "#F5FBB0", "#F2FAAB", "#EFF8A6", "#ECF7A1", "#E9F69C", "#E6F598", "#DEF299", "#D7EF9B", "#CFEC9C", "#C8E99E", "#C1E69F", "#B9E3A1", "#B2E0A2", "#ABDDA4", "#A2D9A4", "#99D6A4", "#91D2A4", "#88CFA4", "#7FCCA4", "#77C8A4", "#6EC5A4", "#66C2A5", "#5FBAA8", "#59B3AB", "#52ACAE", "#4CA5B1", "#459DB4", "#3F96B7", "#388FBA", "#3288BD", "#3780B9", "#3D79B6", "#4272B2", "#486BAF", "#4D64AC", "#535DA8", "#5856A5", "#5E4FA2")
