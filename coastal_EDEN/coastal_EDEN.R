@@ -117,7 +117,7 @@ for (i in 1:dim(params)[1]) {
   dev.off()
   jpeg(paste0("./images/", params$column[i], "_full.jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
   plot(db2$date, db2$avg, type = "n", xlab = "Month of year", ylab = lab, ylim = range(db2$avg, na.rm = T), xaxt = "n", main = paste(c("Gage", tmp[-length(tmp)]), collapse = " "))
-  axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 3:0, hadj = -1.5)
+  axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = format(db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], "%Y"), hadj = -1.5)
   grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
   abline(v = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], lty = "dashed", col = "black")
   lines(db2$date, db2$avg, lwd = 3)

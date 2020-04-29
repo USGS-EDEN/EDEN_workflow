@@ -108,7 +108,7 @@ for (j in c("salinity", "temperature", "stage")) {
       jpeg(paste0("./images/", gages$NWIS_ID[i], "_", j, ".jpg"), width = 2400, height = 800, quality = 100, type = "quartz")
       lab <- if (j == "salinity") "Salinity (PPT)" else if (j == "temperature") "Temperature (°C)" else "Stage (ft.)"
       plot(db2$date, db2$sts, type = "n", xlab = "Year", ylab = lab, ylim = range(db2$sts, na.rm = T), xaxt = "n", main = paste(gages$NWIS_ID[i], j))
-      axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = as.numeric(format(Sys.Date(), "%Y")) - 3:0, hadj = -1, padj = 1.7)
+      axis(1, at = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], labels = format(db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], "%Y"), hadj = -1, padj = 1.7)
       grid(nx = NA, ny = NULL, col = "black", lty = "dashed")
       abline(v = db2$date[which(format(db2$date, "%m") == "01" & format(db2$date, "%d") == "01")], lty = "dashed", col = "black")
       lines(db2$date, db2$sts, lwd = 3)
