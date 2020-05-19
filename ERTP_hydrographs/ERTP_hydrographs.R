@@ -54,7 +54,6 @@ if (length(date_check) == 0) {
       qyear[i, ] <- quantile(iop$stage[as.POSIXlt(iop$date)$mon == as.numeric(format(strptime(paste("2010", i), "%Y %j"), "%m")) - 1] ,c(0, .1, .25, .75, .9, 1), na.rm = T)
       median[i, ] <- quantile(iop$stage[as.POSIXlt(iop$date)$mon == as.numeric(format(strptime(paste("2010", i), "%Y %j"), "%m")) - 1], 0.5, na.rm = T)
     }
-    median[xx] <- NA
     if (!is.na(gages$average_elevation[j]) & !is.na(rev(yr$stage)[1]) & rev(yr$stage)[1] >= rev(qyear[, 5])[1]) {
       hw <- paste0(hw, "<a href='http://sofia.usgs.gov/eden/water_level_percentiles.php?name=", gages$station_name_web[j], "&type=gage'>", gages$station_name_web[j], "</a><br />\n")
       high_counter <- high_counter + 1
@@ -63,6 +62,11 @@ if (length(date_check) == 0) {
       lw <- paste0(lw, "<a href='http://sofia.usgs.gov/eden/water_level_percentiles.php?name=", gages$station_name_web[j], "&type=gage'>", gages$station_name_web[j], "</a><br />\n")
       low_counter <- low_counter + 1
     }
+    
+    write(c(mdy, rev(yr$stage)[1]), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 2)
+    write(t(cbind(qyear[xx, 1:3], median[xx], qyear[xx, 4:6])), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 7, append = T)
+    err <- try (ftpUpload(paste0("./table/", gages$station_name_web[j], ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/table/", gages$station_name_web[j], ".txt")))
+    median[xx] <- NA
 
     jpeg(paste0("./images/", gages$station_name_web[j], "_monthly.jpg"), width = 1200, height = 800, quality = 100, type = "quartz")
     par(mar = c(5, 4, 4, 5) + .1)
@@ -114,10 +118,6 @@ if (length(date_check) == 0) {
     points(length(yr$date), rev(yr$stage)[1], pch = 20)
     dev.off()
     err <- try (ftpUpload(paste0("./images/", gages$station_name_web[j], "_monthly.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/thumbnails/", gages$station_name_web[j], "_monthly_thumb.jpg")))
-    
-    write(c(mdy, rev(yr$stage)[1]), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 2)
-    write(t(cbind(qyear[xx, 1:3], median[xx], qyear[xx, 4:6])), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 7, append = T)
-    err <- try (ftpUpload(paste0("./table/", gages$station_name_web[j], ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/table/", gages$station_name_web[j], ".txt")))
   }
 }
 if(high_counter == 0) hw <- paste0(hw, "<strong>No gages equal or exceed the 90th percentile for the month on ", mdy, ".</strong>")
