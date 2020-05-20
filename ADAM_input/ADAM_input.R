@@ -211,7 +211,7 @@ for (d in lday) {
   report <- paste0(report, "Total number of hourly values in data file: ", tot, "\n")
 
   png(paste0("./reports/gage_count", d, ".png"), 862, 614, type = "quartz")
-  plot(range2, usgs_cnt, type = "l", lwd = 3, ylim = range(usgs_cnt, enp_cnt, sfwmd_cnt, 0, na.rm = T), main = paste(as.Date(range2[length(range2)]), "ADAM input gage hourly values count"), xlab = "Date", ylab = "Gage values count")
+  plot(range2, usgs_cnt, type = "l", lwd = 3, ylim = range(usgs_cnt, enp_cnt, sfwmd_cnt, 0, na.rm = T), main = paste(as.Date(range2[length(range2)], tz = "EST"), "ADAM input gage hourly values count"), xlab = "Date", ylab = "Gage values count")
   points(range2, usgs_cnt, pch = 16)
   lines(range2, enp_cnt, lwd = 3, col = "blue")
   points(range2, enp_cnt, pch = 16, col = "blue")
