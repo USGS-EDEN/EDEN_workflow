@@ -136,7 +136,7 @@ for (i in 2002:yr)
   for (j in 1:4)
     if (!file.exists(paste0("../surfaces/", i, "_q", j, ".nc")) & !(i == yr & j > qtr))
       err <- try (download.file(paste0("https://sflthredds.er.usgs.gov/thredds/fileServer/eden/surfaces/", i, "_q", j, ".nc"), paste0("../surfaces/", i, "_q", j, ".nc")))
-file_surf <- list.files("../surfaces", "^2(002_q[3-4]|00[3-9]_q[1-4]|01[0-9]_q[1-4]).nc$")
+file_surf <- list.files("../surfaces", "^2(002_q[3-4]|00[3-9]_q[1-4]|0[1-2][0-9]_q[1-4]).nc$")
 
 tree <- dbGetQuery(con, "select * from tree_islands order by `order`")
 hw <- paste0(hw, "</p>\n<p>Water levels at the following tree islands equal or exceed the maximum tree island ground elevation, or the 90th percentile water level for the month:</p>\n<p>")
