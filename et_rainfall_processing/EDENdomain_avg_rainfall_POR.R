@@ -45,7 +45,7 @@ pix2 <- pixel_utm[which(pixel_utm$keep == 1), ]
 # assumes data delivery in month after data coverage
 year <- format(Sys.Date(), "%Y")
 month <- format(Sys.Date(), "%m")
-if (month == "01") { month <- "12"; year <- as.numeric(year) - 1 } else month <- as.numeric(month) - 1
+if (month == "01") { month <- 12; year <- as.numeric(year) - 1 } else month <- as.numeric(month) - 1
 fst <- as.Date(paste(year, month, "01", sep = "-"))
 lst <- (seq(fst, length = 2, by = "month") - 1)[2]
 dt <- seq(as.Date("2002-01-01"), lst, by = "day")

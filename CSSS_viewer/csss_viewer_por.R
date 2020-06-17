@@ -50,7 +50,7 @@ for (i in 1:length(dt$date))
 write("}", "./output/por_stats.js", append = T)
 
 # Calc subarea annual stats (~3min)
-year <- data.frame(year=2014:2019)
+year <- data.frame(year=1991:2019)
 start_nest <- which(as.POSIXlt(time)$mon == 2 & as.POSIXlt(time)$mday == 1)
 end_nest <- which(as.POSIXlt(time)$mon == 6 & as.POSIXlt(time)$mday == 15)
 start_year <- which(as.POSIXlt(time)$yday == 0)
@@ -76,8 +76,8 @@ for (i in 1:length(sub)) {
     year[j, paste0("year211_", sub[i])] <- round((sum(ifelse(rowSums(get(paste0("wet_", sub[i]))[, , start_year[j]:end_year[j]], dims = 2) >= 211, 1, 0), na.rm = T)) / dim, 3) * 100
   }
   for (j in 4:length(year$year)) {
-    year[j, paste0("four_hyd_mean_", sub[i])] <- round(mean(rowSums(get(paste0("wet_", sub[i]))[, , start_year[j - 3]:end_year[j]], dims = 2) / 4, na.rm = T), 1)
     tmp <- rowSums(get(paste0("wet_", sub[i]))[, , start_year[j - 3]:end_year[j]], dims = 2) / 4
+    year[j, paste0("four_hyd_mean_", sub[i])] <- round(mean(tmp, na.rm = T), 1)
     tmp2 <- tmp[tmp >= 90 & tmp <= 210]
     year[j, paste0("four_hyd_per_", sub[i])] <- round(length(tmp2[!is.na(tmp2)]) * 100 / dim, 1)
   }
@@ -89,13 +89,13 @@ for (i in (length(year$year) - 3):1) {
   print(year$year[i] + 4)
   h1 <- array(NA, c(287, 405, 4))
   sd <- matrix(NA, 287, 405)
-  qual <- matrix(NA, 287, 405)
+  #qual <- matrix(NA, 287, 405)
   wet <- time <- NULL
   for (j in 1:16) {
     surf.nc <- nc_open(paste0("../surfaces/", file_surf[j + (i - 1) * 4]))
     stage <- ncvar_get(surf.nc, "stage")
     t <- ncvar_get(surf.nc, "time")
-    time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t, recursive = T), origin = "1970/1/1")
+    time <- as.Date(c(time, as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + t, recursive = T), origin = "1970/1/1")
     nc_close(surf.nc)
     depth <- sweep(stage, c(1, 2), dem, "-")
     wet <- abind(wet, ifelse(depth < 0, 0, 1))
@@ -109,9 +109,9 @@ for (i in (length(year$year) - 3):1) {
   for (k in 1:dim(h1)[1])
     for (l in 1:dim(h1)[2])
       sd[k, l] <- sd(h1[k, l, ])
-  for (k in 1:dim(h1)[1])
-    for (l in 1:dim(h1)[2])
-      qual[k, l] <- sum(h1[k, l, ] >= 90 & h1[k, l, ] >= 210)
+  #for (k in 1:dim(h1)[1])
+    #for (l in 1:dim(h1)[2])
+      #qual[k, l] <- sum(h1[k, l, ] >= 90 & h1[k, l, ] >= 210)
 
   for (j in 1:length(sub)) {
     print(sub[j])
@@ -240,16 +240,16 @@ for (i in 4:length(year$year))
 
 # Create POR depth maps
 col<-c("deepskyblue","steelblue","blue3","blue4")
-for (k in 5:length(file_surf)) {
+for (k in 1:length(file_surf)) {
   print(file_surf[k])
-  surf.nc<-nc_open(paste0("~/Desktop/R/trexler_ponds/surfaces/",file_surf[k]))
+  surf.nc<-nc_open(paste0("../surfaces/",file_surf[k]))
   stage<-ncvar_get(surf.nc,"stage")
   time<-ncvar_get(surf.nc, "time")
-  time<-as.POSIXct(surf.nc$dim$time$units,format="days since %Y-%m-%dT%H:%M:%SZ")+86400*time
+  time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + time
   nc_close(surf.nc)
   depth<-sweep(stage,c(1,2),dem,"-")
   for (i in 1:length(time)) {
-    png(filename=paste0("~/Desktop/R/csss_viewer/imgs4/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),width=614,height=862,units="px",pointsize=12,bg="transparent",type="quartz")
+    png(filename=paste0("images/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),width=614,height=862,units="px",pointsize=12,bg="transparent",type="quartz")
     par(mar=c(0,0,0,0))
     image(x,y,depth[,,i],col=col,breaks=c(0,17,30,46,600),axes=F,asp=1)
     text(x[1],y[10],as.Date(time[i]),pos=4)
@@ -257,10 +257,10 @@ for (k in 5:length(file_surf)) {
     dev.off()
     if(as.POSIXlt(time[i])$year%%4!=0)
       if(as.POSIXlt(time[i])$yday>=59 & as.POSIXlt(time[i])$yday<=195)
-        file.copy(paste0("~/Desktop/R/csss_viewer/imgs4/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),paste0("~/Desktop/R/csss_viewer/imgs4/",format(time[i],'%Y'),sprintf("_nest/trans%04d",as.POSIXlt(time[i])$yday-59),".png"),overwrite=T)
+        file.copy(paste0("images/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),paste0("images/",format(time[i],'%Y'),sprintf("_nest/trans%04d",as.POSIXlt(time[i])$yday-59),".png"),overwrite=T)
     if(as.POSIXlt(time[i])$year%%4==0)
       if(as.POSIXlt(time[i])$yday>=60 & as.POSIXlt(time[i])$yday<=196)
-        file.copy(paste0("~/Desktop/R/csss_viewer/imgs4/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),paste0("~/Desktop/R/csss_viewer/imgs4/",format(time[i],'%Y'),sprintf("_nest/trans%04d",as.POSIXlt(time[i])$yday-60),".png"),overwrite=T)
+        file.copy(paste0("images/",format(time[i],'%Y'),sprintf("/trans%04d",as.POSIXlt(time[i])$yday),".png"),paste0("images/",format(time[i],'%Y'),sprintf("_nest/trans%04d",as.POSIXlt(time[i])$yday-60),".png"),overwrite=T)
   }
 }
 
@@ -281,8 +281,7 @@ for (i in 1:length(file_surf)) {
   surf.nc<-nc_open(paste0("../surfaces/",file_surf[i]))
   stage<-ncvar_get(surf.nc,"stage")
   t<-ncvar_get(surf.nc,"time")
-  if (i < 7) time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t
-  if (i == 7) time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t
+  time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + t
   nc_close(surf.nc)
   for (j in 1:length(time)) {
     for (k in 1:length(trans_pix$X)) {
