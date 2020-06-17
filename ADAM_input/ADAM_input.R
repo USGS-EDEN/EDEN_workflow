@@ -159,7 +159,7 @@ for (d in lday) {
     sfwmd_file <- list.files("./sfwmd/", format(days[2] - i, "%Y%m%d"))
     if (!length(sfwmd_file)) {
       # Find day's SFWMD file name
-      err2 <- try (sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[56]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
+      err2 <- try (sfwmd_file <- tail(strsplit(grep(paste0("sfwmd_", format(days[2] - i, "%Y%m%d"), "_0[567]"), strsplit(getURL("ftp://ftpint.usgs.gov/from_pub/er/eden/"), "\r*\n")[[1]], value=T), " ")[[1]], n = 1))
       # Download today's SFWMD file
       err <- try (download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)))
       if (inherits(err, "try-error") | inherits(err2, "try-error"))

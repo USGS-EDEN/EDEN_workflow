@@ -40,7 +40,7 @@ yr <- format(Sys.Date(), "%Y")
 outfile <- paste0("./output/data_uv_", yr, qtr, ".txt")
 write(header, outfile)
 # Manually calculate first and last day of quarter
-days <- c(as.Date("2019-07-01"), as.Date("2019-09-30"))
+days <- c(as.Date("2020-01-01"), as.Date("2020-03-31"))
 # range: include all of final day for quarterly/annual
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
 end <- strptime(paste(days[2], "23:54:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -87,7 +87,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
 report <- paste0(report, "USGS gages with ", days[1], " values: ", cnt, ".\n")
 
 # Enter filenames to download quarterly/annual file to local working directory
-enp_file <- "enp_20191118_1300"
+enp_file <- "enp_20200518_1201"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
   report <- paste0(report, "ENP quarterly input file _NOT_ downloaded.\n")
@@ -121,7 +121,7 @@ for (i in which(db$operating_agency_id == 1))
 # Report first day of quarter's ENP gage count
 report <- paste0(report, "ENP gages with ", days[1], " values: ", length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == days[1])), ".\n")
 
-sfwmd_file <- "sfwmd_qtr_20191115_0626"
+sfwmd_file <- "sfwmd_qtr_20200515_0626"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
   report <- paste0(report, "SFWMD quarterly input file _NOT_ downloaded.\n")
@@ -217,11 +217,11 @@ for (i in 1:length(enp_gages$station_name_web)) {
   if (enp_gages$vertical_datum_id[i] == 3) conv$conv <- 0
   enp_pre <- dbGetQuery(con, paste0("select datetime, `stage_", enp_gages$station_name_web[i], "` as st from stage where datetime = '", range[1] - 3600, "'"))
   enp_pre <- data.frame("ENP", enp_gages$station_name_web[i], range[1] - 3600, enp_pre$st)
+  write.table(enp_pre, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
   if (length(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[1])])) {
     enp_s <- data.frame("ENP", enp_gages$station_name_web[i], range[1], as.numeric(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[1])]) + conv$conv)
-    write.table(enp_pre, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
+    write.table(enp_s, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
   }
-  write.table(enp_s, "./output/marryup.txt", sep="\t", quote=F, row.names=F, col.names=F, append=T)
   enp_post <- dbGetQuery(con, paste0("select datetime, `stage_", enp_gages$station_name_web[i], "` as st from stage where datetime = '", range[length(range)] + 3600, "'"))
   enp_post <- data.frame("ENP", enp_gages$station_name_web[i], range[length(range)] + 3600, enp_post$st)
   if (length(enp$V5[which(enp$V2 == enp_gages$station_name_web[i] & enp$date_tm == range[length(range)])])) {
