@@ -70,8 +70,8 @@ for (i in 1:length(rain_old)) {
 
 for (i in 1:length(rain_new)) {
   print(rain_new[i])
-  yr <- as.numeric(substr(rain_new[i], 39, 42))
-  mn <- as.numeric(substr(rain_new[i], 43, 44))
+  yr <- as.numeric(substr(rain_new[i], 22, 25))
+  mn <- as.numeric(substr(rain_new[i], 26, 27))
   if (mn == 12) { yr2 <- yr + 1; mn2 <- 1
   } else { yr2 <- yr; mn2 <- mn + 1 }
   m <- seq(as.Date(paste0(yr, "-", mn, "-01")), as.Date(paste0(yr2, "-", mn2, "-01")) - 1, by = "day")
