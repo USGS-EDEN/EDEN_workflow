@@ -45,7 +45,7 @@ pix2 <- pixel_utm[which(pixel_utm$keep == 1), ]
 # assumes data delivery in month after data coverage
 year <- format(Sys.Date(), "%Y")
 month <- format(Sys.Date(), "%m")
-if (month == "01") { month <- "12"; year <- as.numeric(year) - 1 } else month <- as.numeric(month) - 1
+if (month == "01") { month <- 12; year <- as.numeric(year) - 1 } else month <- as.numeric(month) - 1
 fst <- as.Date(paste(year, month, "01", sep = "-"))
 lst <- (seq(fst, length = 2, by = "month") - 1)[2]
 dt <- seq(as.Date("2002-01-01"), lst, by = "day")
@@ -70,8 +70,8 @@ for (i in 1:length(rain_old)) {
 
 for (i in 1:length(rain_new)) {
   print(rain_new[i])
-  yr <- as.numeric(substr(rain_new[i], 39, 42))
-  mn <- as.numeric(substr(rain_new[i], 43, 44))
+  yr <- as.numeric(substr(rain_new[i], 22, 25))
+  mn <- as.numeric(substr(rain_new[i], 26, 27))
   if (mn == 12) { yr2 <- yr + 1; mn2 <- 1
   } else { yr2 <- yr; mn2 <- mn + 1 }
   m <- seq(as.Date(paste0(yr, "-", mn, "-01")), as.Date(paste0(yr2, "-", mn2, "-01")) - 1, by = "day")

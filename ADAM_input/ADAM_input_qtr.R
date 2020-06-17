@@ -36,11 +36,13 @@ report <- ""
 tbl <- matrix(0, 3, 1)
 header <- "agency_cd\tsite_no\tdd_nu\tparameter_cd\tUVTYPE\tdate_tm\tTZCD\tVALUE\tPRECISION\tREMARK\tFLAGS\tQA"
 qtr <- quarters(Sys.Date() - 90)
-yr <- format(Sys.Date(), "%Y")
-outfile <- paste0("./output/data_uv_", yr, qtr, ".txt")
+qtr <- switch(qtr, "Q4" = "Q1", "Q1" = "Q2", "Q2" = "Q3", "Q3" = "Q4")
+yr <- format(Sys.Date() - 90, "%Y")
+if (qtr == "Q1") yr <- as.numeric(yr) + 1
+outfile <- paste0("./output/data_uv_WY", yr, qtr, ".txt")
 write(header, outfile)
 # Manually calculate first and last day of quarter
-days <- c(as.Date("2019-07-01"), as.Date("2019-09-30"))
+days <- c(as.Date("2019-10-01"), as.Date("2019-12-31"))
 # range: include all of final day for quarterly/annual
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
 end <- strptime(paste(days[2], "23:54:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -87,7 +89,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
 report <- paste0(report, "USGS gages with ", days[1], " values: ", cnt, ".\n")
 
 # Enter filenames to download quarterly/annual file to local working directory
-enp_file <- "enp_20191118_1300"
+enp_file <- "enp_20200213_1413"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
   report <- paste0(report, "ENP quarterly input file _NOT_ downloaded.\n")
@@ -121,7 +123,7 @@ for (i in which(db$operating_agency_id == 1))
 # Report first day of quarter's ENP gage count
 report <- paste0(report, "ENP gages with ", days[1], " values: ", length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == days[1])), ".\n")
 
-sfwmd_file <- "sfwmd_qtr_20191115_0626"
+sfwmd_file <- "sfwmd_qtr_20200215_0628"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
   report <- paste0(report, "SFWMD quarterly input file _NOT_ downloaded.\n")
@@ -155,6 +157,15 @@ for (i in which(db$operating_agency_id == 2 | db$operating_agency_id == 3))
   } else report <- paste0(report, " Gage ", db$station_name[i], " missing\n")
 # Report first day of quarter's SFWMD gage count
 report <- paste0(report, "SFWMD gages with ", days[1], " values: ", length(which(as.POSIXlt(sfwmd$date_tm)$min == 0 & as.POSIXlt(sfwmd$date_tm)$hour == 1 & as.Date(sfwmd$date_tm) == days[1])), ".\n")
+
+s141ht <- dbGetQuery(con, "select station_name_web, operating_agency_id, usgs_nwis_id, dd, param, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and (station_name = 'S141@H' or station_name = 'S141@T') group by station_name order by operating_agency_id, station_name")
+s141ht_dat <- read.csv("./sfwmd/S141s_WY2020Q1.csv", colClasses=c("character", "character", "numeric", "NULL"))
+s141ht_dat$Date <- as.POSIXct(s141ht_dat$Date, tz = "EST", format = "%m/%d/%Y %H:%M")
+s141ht_dat <- s141ht_dat[s141ht_dat$Date %in% range, ]
+for (i in 1:length(s141ht$station_name)) {
+  report <- paste(report, "Gage", s141ht$station_name[i], "values:", length(s141ht_dat$Stage[s141ht_dat$Site == s141ht$station_name[i]]), "\n")
+  write.table(data.frame("FL005", s141ht$usgs_nwis_id[i], paste0("   ", s141ht$dd[i]), s141ht$param[i], "da", format(s141ht_dat$Date[s141ht_dat$Site == s141ht$station_name[i]], "%m/%d/%Y %H:%M:%S"), "EST", as.numeric(s141ht_dat$Stage[s141ht_dat$Site == s141ht$station_name[i]]) + s141ht$conv[i], "9", "", "", "9"), outfile, sep="\t", quote=F, row.names=F, col.names=F, append=T)
+}
 
 ### System level commands may not work if local environment does not have curl, zip, or sendmail installed
 ### May need to transfer/perform manually instead!!
