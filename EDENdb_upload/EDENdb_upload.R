@@ -21,7 +21,7 @@ if (length(days) != 1)
 try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database and download data file
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 # This will work for local or FTP ADAM-format files, as needed
 data_file <- "ftp://ftpint.usgs.gov/from_pub/er/ISOutput_Run.txt"
 file_columns <- c(rep("NULL", 3), "numeric", "character", "numeric", rep("NULL", 2), "numeric", rep("NULL", 9), "character", "character", "numeric", rep("NULL", 20), "character", rep("NULL", 4))

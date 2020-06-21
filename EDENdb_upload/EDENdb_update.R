@@ -15,7 +15,7 @@ library (RMySQL)
 try (setwd("./EDENdb_upload"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database and download data file
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 # This will work for local non-ADAM-format files
 data_file <- "input.csv"
 file_columns <- c("character", "character", "numeric", "character")

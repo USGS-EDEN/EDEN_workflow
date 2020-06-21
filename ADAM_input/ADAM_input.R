@@ -18,7 +18,7 @@ library (stringr)
 try (setwd("./ADAM_input"), silent = T)
 source ("../usr_pwd.R")
 # Connect to database, list of gages for which to acquire data
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 
 gages <- dbGetQuery(con, "select station_name_web, station_name, operating_agency_id, usgs_nwis_id, dd, param, ts_id, case when vertical_datum_id = 2 then vertical_conversion else 0 end as conv from station, station_datum where station.station_id = station_datum.station_id and realtime = 1 group by station_name order by operating_agency_id, station_name")
 # Dummy NWIS IDs, other legacy params, for new gages

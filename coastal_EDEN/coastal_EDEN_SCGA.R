@@ -19,7 +19,7 @@ library (CSI)
 try (setwd("./coastal_EDEN"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database, list of gages for which to acquire data
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 gages <- read.csv("./SCGA_salinity_gages.csv", colClasses = c("character", "character", "numeric", "numeric"))
 days <- c(Sys.Date() - 14, Sys.Date() - 1)
 range <- seq.Date(days[1], days[2], "day")

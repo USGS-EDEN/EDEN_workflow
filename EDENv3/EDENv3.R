@@ -29,7 +29,7 @@ source("./netCDF_IO_v3.1.R")
 source ("../usr_pwd.R")
 source("./EDENv3_functions.R")
 # Connect to database, list of gages for which to acquire data
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 
 ## Convert subarea grids to anisotropic space outside of the function
 # Import subareas' grid cell centroids
