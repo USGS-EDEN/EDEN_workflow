@@ -1,7 +1,7 @@
 #! /bin/ksh
 #
 
-cd /export1/htdocs/eden
+cd /var/www/eden
 /usr/kerberos/bin/ftp -in ftpint.usgs.gov << e_o_f
 user anonymous sunshine@usgs.gov
 cd /pub/er/fl/st.petersburg/eden/ertp_hydrographs/

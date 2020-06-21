@@ -1,7 +1,7 @@
 #! /bin/ksh
 #
 
-cd /export1/htdocs/eden/coastal
+cd /var/www/eden/coastal
 /usr/kerberos/bin/ftp -in ftpint.usgs.gov << e_o_f
 user anonymous sunshine@usgs.gov
 cd /pub/er/fl/st.petersburg/eden/coastal_eden/
@@ -25,5 +25,5 @@ mget temperature_30day/*
 mget csi_values.csv
 bye
 e_o_f
-cd /export1/htdocs/eden/coastal
+cd /var/www/eden/coastal
 /usr/bin/zip csi_values.zip csi_values/*
