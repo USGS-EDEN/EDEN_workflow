@@ -227,7 +227,7 @@ for (d in lday) {
   err <- try (write(report, paste0("./reports/report_", d, "_", format(Sys.Date(), "%Y%m%d"), ".txt")))
   
   ### System level commands may not work if local environment does not have sendmail installed!!
-  to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, bhuffman@usgs.gov, kjconlon@usgs.gov"
+  to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, matthews@usgs.gov, jmclark@usgs.gov, wbguimar@usgs.gov, dantolin@usgs.gov, amedenblik@usgs.gov, kjconlon@usgs.gov"
   system(paste0("(echo 'Subject: data_uv_AQ", d, ".txt ", d, "-day upload report
   ", report, "'; uuencode ./output/data_uv_AQ", d, ".txt.zip data_uv_AQ", d, ".txt.zip; uuencode ./reports/gage_count", d, ".png gage_count", d, ".png) | /usr/sbin/sendmail ", to))
 }
