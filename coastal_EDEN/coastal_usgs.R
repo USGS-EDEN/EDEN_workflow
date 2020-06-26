@@ -75,3 +75,4 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
     dbSendQuery(con, query)
   }
 }
+setwd("..")
