@@ -15,7 +15,7 @@ library (RMySQL)
 try (setwd("./et_rainfall_processing"), silent = T)
 source ("../admin_pwd.R")
 # Connect to database and download data file
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
 pixel <- read.table("./pixels-all.txt", header = T, sep = "\t", colClasses = c("integer", "numeric", "numeric"))
 
 # Assign closest pixel center to gage
