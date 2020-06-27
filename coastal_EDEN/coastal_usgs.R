@@ -9,7 +9,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = 
 
 gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
 for (i in 1:dim(gages)[1]) {
-  sd <- Sys.Date() - 7; ed <- Sys.Date()
+  sd <- Sys.Date() - 7; ed <- Sys.Date() - 1
   url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$gage[i], "&startDT=", sd, "&endDT=", ed, "&parameterCd=", gages$param[i], "&statCd=00003&access=3")
   gage <- read.table(url, header = T, sep = "\t", colClasses = "character", check.names = F)
   gage <- gage[2:dim(gage)[1], ]
