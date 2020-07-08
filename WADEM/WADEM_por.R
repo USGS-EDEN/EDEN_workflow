@@ -40,7 +40,7 @@ for (i in 97:length(file_surf)) {
   surf.nc <- nc_open(paste0("../surfaces/", file_surf[i]))
   stage <- ncvar_get(surf.nc, "stage")
   t <- ncvar_get(surf.nc, "time")
-  time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%SZ") + t
+  time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + t
   nc_close(surf.nc)
   depth <- sweep(stage, c(1, 2), dem, "-")
   if (!dir.exists(paste0("./images/depth_", format(time[1],'%Y')))) dir.create(paste0("./images/depth_", format(time[1],'%Y')))
