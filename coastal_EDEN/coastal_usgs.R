@@ -5,7 +5,7 @@ library (CSI)
 setwd("./coastal_EDEN")
 source ("../admin_pwd.R")
 # Connect to database, list of gages for which to acquire data
-con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
+con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "igsafpesgsz03.er.usgs.gov")
 
 gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
 for (i in 1:dim(gages)[1]) {
@@ -42,7 +42,7 @@ for (i in 1:dim(gages)[1]) {
 }
 
 for (i in 1:dim(tbl)[1]) {
-  r <- "insert into coastal_usgs (date"
+  r <- "insert into usgs_salinity (date"
   q <- paste0("values ('", tbl$date[i], "'")
   for (j in 2:dim(tbl)[2]) {
     r <- paste0(r, ", `", names(tbl)[j], "`")
@@ -52,12 +52,12 @@ for (i in 1:dim(tbl)[1]) {
   dbSendQuery(con, q)
 }
 
-db <- dbGetQuery(con, "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'eden'
-AND TABLE_NAME = 'coastal_usgs' and COLUMN_NAME like '%_salinity'")
+db <- dbGetQuery(con, "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'csi'
+AND TABLE_NAME = 'usgs_salinity' and COLUMN_NAME like '%_salinity'")
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
 for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
-query <- paste(query, "from coastal_usgs group by Year, Month")
+query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -65,14 +65,13 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
   m <- format(d2, format = "%m")
   while (format(d2, format = "%m") == m) d2 <- d2 + 1
   d2 <- as.integer(format(d2 - 1, format = "%d"))
-  for (k in 1:d2) {
-    query <- "update coastal_usgs set "
+  query <- paste0("insert into usgs_csi values ('", rownames(csi)[l], "-01'")
+  for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
     for (i in 1:dim(csi)[3]) {
-      c <- if(is.na(csi[l, 12, i])) "NULL" else csi[l, 12, i]
-      query <- paste0(query, "`", strsplit(dimnames(csi)[[3]][i], "_")[[1]][1], "_csi` = ", c, ", ")
+      c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
+      query <- paste0(query, ", `", strsplit(dimnames(csi)[[3]][i], "_")[[1]][1], "_csi", k, "` = ", c)
     }
-    query <- paste0(substring(query, 1, nchar(query) - 2), " where date = '", rownames(csi)[l], "-", sprintf("%02d", k), "'")
-    dbSendQuery(con, query)
-  }
+  query <- paste0(substring(query, 1, nchar(query) - 2), ") on duplicate key update date = date")
+  dbSendQuery(con, query)
 }
 setwd("..")
