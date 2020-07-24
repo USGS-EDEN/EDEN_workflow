@@ -1,4 +1,3 @@
-library (stringr)
 library (RMySQL)
 library (CSI)
 
@@ -9,7 +8,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "
 
 gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
 for (i in 1:dim(gages)[1]) {
-  sd <- Sys.Date() - 7; ed <- Sys.Date() - 1
+  sd <- Sys.Date() - 14; ed <- Sys.Date() - 1
   url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$gage[i], "&startDT=", sd, "&endDT=", ed, "&parameterCd=", gages$param[i], "&statCd=00003&access=3")
   gage <- read.table(url, header = T, sep = "\t", colClasses = "character", check.names = F)
   gage <- gage[2:dim(gage)[1], ]
@@ -61,10 +60,6 @@ query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
-  d1 <- d2 <- as.Date(paste0(rownames(csi)[l], "-01"))
-  m <- format(d2, format = "%m")
-  while (format(d2, format = "%m") == m) d2 <- d2 + 1
-  d2 <- as.integer(format(d2 - 1, format = "%d"))
   query <- paste0("insert into usgs_csi values ('", rownames(csi)[l], "-01'")
   for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
     for (i in 1:dim(csi)[3]) {
