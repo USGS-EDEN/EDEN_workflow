@@ -10,7 +10,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "
 g <- c("acespwq", "apaebwq", "cbmocwq", "cbmrrwq", "cbvtcwq", "delslwq", "gndbhwq", "gndblwq", "grblrwq", "grborwq", "grbsqwq", "gtmpcwq", "hudscwq", "hudtnwq", "hudtswq", "jacb6wq", "jacnewq", "job09wq", "job20wq", "marscwq", "nartbwq", "niwdcwq", "niwolwq", "nocrcwq", "noczbwq", "rkblhwq", "sapldwq", "welinwq", "welsmwq", "wkbfrwq", "wqbmhwq")
 for (i in g) {
   print(i)
-  sd <- format(Sys.Date() - 54, "%Y%m%d"); ed <- format(Sys.Date() - 1, "%Y%m%d")
+  sd <- format(Sys.Date() - 14, "%Y%m%d"); ed <- format(Sys.Date() - 1, "%Y%m%d")
   url <- paste0("https://sofia.usgs.gov/eden/programs/nerrs.php?gage=", i, "&sd=", sd, "&ed=", ed)
   g <- read.table(url, header = T, sep = "\t", colClasses = c("character", "numeric", "NULL", "NULL"))
   if (dim(g)[1]) {
