@@ -180,7 +180,7 @@ range <- seq.Date(as.Date(as.character(start), "%Y-%m-%d"), as.Date(as.character
 for (i in length(range):1) {
   if (as.POSIXlt(range[i])$yday == 0) print(as.POSIXlt(range[i])$year + 1900)
   dbDisconnect(con)
-  con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+  con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
   # Select hourly values
   query2 <- "select datetime"
   for (j in 1:length(gages$station_name_web))
