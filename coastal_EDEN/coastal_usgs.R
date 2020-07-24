@@ -69,9 +69,9 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
   for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
     for (i in 1:dim(csi)[3]) {
       c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
-      query <- paste0(query, ", `", strsplit(dimnames(csi)[[3]][i], "_")[[1]][1], "_csi", k, "` = ", c)
+      query <- paste0(query, ", `", substr(dimnames(csi)[[3]][i], 1, nchar(dimnames(csi)[[3]][i]) - 9), "_csi", k, "` = ", c)
     }
-  query <- paste0(substring(query, 1, nchar(query) - 2), ") on duplicate key update date = date")
+  query <- paste0(query, ") on duplicate key update date = date")
   dbSendQuery(con, query)
 }
 setwd("..")
