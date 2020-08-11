@@ -144,6 +144,7 @@ for (j in 1:length(dt)) {
   fail <- 0
   text <- "Agency	Station	X	Y	Daily Median Water Level (cm, NAVD88)	Date	Data Type"
   write.table(text, paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), quote = F, row.names = F, col.names = F, eol = "\r\n")
+  d <- data.frame(gage = gages$station_name_web, median = NA)
   for (i in 1:length(gages$station_name_web)) {
     # Select gage data
 	  query <- paste0("select datetime, `stage_", gages$station_name_web[i], "`+", gages$conv[i], " as stage, `flag_", gages$station_name_web[i], "` as flag from stage where datetime >= ", format(dt[j], "%Y%m%d010000"), " and datetime < ", format(dt[j] + 1, "%Y%m%d000001"), " order by datetime")
@@ -154,11 +155,15 @@ for (j in 1:length(dt)) {
 	  text <- c(gages$agency[i], gages$station_name_web[i], round(gages$utm_easting[i], 1), round(gages$utm_northing[i], 1), round(median(db$stage, na.rm=T) * 12 * 2.54), format(dt[j], "%Y%m%d"), flag)
 	  err <- try (write.table(t(text), paste0("./flag/", format(dt[j], "%Y%m%d"), "_median_flag.txt"), sep = "\t", quote = F, row.names = F, col.names = F, append = T, eol = "\r\n"))
 	  if (inherits(err, "try-error")) { report <- paste0(report, "\nAnnotated daily median file NOT generated for ", gages$station_name_web[i], " for ", dt[j]); fail <- fail + 1 }
+	  d$median[i] <- median(as.numeric(db$stage), na.rm = T) * 12 * 2.54
   }
   if (fail == 0) report <- paste0(report, "\n\nAnnotated daily median file generated for ", dt[j])
   # Transfer file to eFTP
   err <- try(ftpUpload(paste0("./flag/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), "_median_flag.txt"), .opts = list(forbid.reuse = 1)))
   report <- if (inherits(err, "try-error")) paste0(report, "\nAnnotated daily median file NOT transferred for ", dt[j]) else paste0(report, "\nAnnotated daily median file transferred for ", dt[j])
+  write.csv(d, paste0("./webservice/", format(dt[j], "%Y%m%d"), ".csv"), quote = F, row.names = F)
+  err <- try(ftpUpload(paste0("./webservice/", format(dt[j],"%Y%m%d"), ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden-data/netcdf/", format(dt[j],"%Y%m%d"), ".csv"), .opts = list(forbid.reuse = 1)))
+  report <- if (inherits(err, "try-error")) paste0(report, "\nWebservice file NOT transferred for ", dt[j]) else paste0(report, "\nWebservice file transferred for ", dt[j])
 }
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 # Email report of data upload
