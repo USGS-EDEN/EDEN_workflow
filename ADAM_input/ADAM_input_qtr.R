@@ -42,7 +42,7 @@ if (qtr == "Q1") yr <- as.numeric(yr) + 1
 outfile <- paste0("./output/data_uv_WY", yr, qtr, ".txt")
 write(header, outfile)
 # Manually calculate first and last day of quarter
-days <- c(as.Date("2020-01-01"), as.Date("2020-03-31"))
+days <- c(as.Date("2020-04-01"), as.Date("2020-06-30"))
 # range: include all of final day for quarterly/annual
 start <- strptime(paste(days[1], "00:00:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
 end <- strptime(paste(days[2], "23:54:00"), "%Y-%m-%d %H:%M:%S", tz = "EST")
@@ -89,7 +89,7 @@ for (i in 1:length(usgs_gages$station_name_web)) {
 report <- paste0(report, "USGS gages with ", days[1], " values: ", cnt, ".\n")
 
 # Enter filenames to download quarterly/annual file to local working directory
-enp_file <- "enp_20200518_1201"
+enp_file <- "enp_20200817_0930"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/enp/", enp_file), paste0("./enp/", enp_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./enp/", enp_file)) | !file.info(paste0("./enp/", enp_file))$size) {
   report <- paste0(report, "ENP quarterly input file _NOT_ downloaded.\n")
@@ -123,7 +123,7 @@ for (i in which(db$operating_agency_id == 1))
 # Report first day of quarter's ENP gage count
 report <- paste0(report, "ENP gages with ", days[1], " values: ", length(which(as.POSIXlt(enp$date_tm)$min == 0 & as.POSIXlt(enp$date_tm)$hour == 0 & as.Date(enp$date_tm) == days[1])), ".\n")
 
-sfwmd_file <- "sfwmd_qtr_20200515_0626"
+sfwmd_file <- "sfwmd_qtr_20200815_0638"
 #err <- try(download.file(paste0("ftp://ftpint.usgs.gov/from_pub/er/eden/", sfwmd_file), paste0("./sfwmd/", sfwmd_file)), silent = T)
 if (inherits(err, "try-error") | !file.exists(paste0("./sfwmd/", sfwmd_file)) | !file.info(paste0("./sfwmd/", sfwmd_file))$size) {
   report <- paste0(report, "SFWMD quarterly input file _NOT_ downloaded.\n")

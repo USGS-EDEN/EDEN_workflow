@@ -1,8 +1,8 @@
 library (ncdf4)
 try (setwd("./CSSS_viewer"), silent = T)
 
-fls <- list.files("./input/", "^depth_")[c(1:9, 14:18)]
-sc <- c("ALTH", "ALTN2", "ALTO", "ALTQ", "ALTK", "ALTL", "ALTN", "ECB19R", "ECB19RR", "W3RNL", "WALT1R", "WALT3R", "WECB", "WFWO")
+fls <- list.files("./input/", "^depth_")
+sc <- c("ALTHR", "WECB", "WFWO")
 s.nc <- nc_open(paste0("./input/", fls[1]))
 x <- ncvar_get(s.nc, "x")
 y <- ncvar_get(s.nc, "y")

@@ -7,8 +7,8 @@ source ("../admin_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "igsafpesgsz03.er.usgs.gov")
 
 gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
+sd <- Sys.Date() - 14; ed <- Sys.Date() - 1
 for (i in 1:dim(gages)[1]) {
-  sd <- Sys.Date() - 14; ed <- Sys.Date() - 1
   url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$gage[i], "&startDT=", sd, "&endDT=", ed, "&parameterCd=", gages$param[i], "&statCd=00003&access=3")
   gage <- read.table(url, header = T, sep = "\t", colClasses = "character", check.names = F)
   gage <- gage[2:dim(gage)[1], ]
@@ -28,6 +28,7 @@ for (i in 1:dim(gages)[1]) {
       r <- gage[, 4] / 53087
       gage[, 4] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
     }
+    gage[, 4] <- round(gage[, 4], 2)
     gage[, 6] <- names(gage[4])
     names(gage)[4] <- paste0(gage$site_no[1], "_salinity")
     names(gage)[5] <- paste0(gage$site_no[1], "_code")
@@ -41,13 +42,15 @@ for (i in 1:dim(gages)[1]) {
 }
 
 for (i in 1:dim(tbl)[1]) {
-  r <- "insert into usgs_salinity (date"
-  q <- paste0("values ('", tbl$date[i], "'")
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from usgs_salinity where date = '", tbl$date[i], "'"))
+  in_up <- if (date_check$ct == 1) "update" else "insert into"
+  q <- paste0(in_up, " usgs_salinity set date = '", tbl$date[i], "'")
   for (j in 2:dim(tbl)[2]) {
-    r <- paste0(r, ", `", names(tbl)[j], "`")
-    if (is.na(tbl[i, j])) q <- paste0(q, ", NULL") else q <- paste0(q, ", '", tbl[i, j], "'")
+    if (is.na(tbl[i, j])) tmp <- "NULL" else tmp <- paste0("'", tbl[i, j], "'")
+    q <- paste0(q, ", `", names(tbl)[j], "` = ", tmp)
   }
-  q <- paste0(r, ")", q, ") on duplicate key update date = date")
+  if (date_check$ct == 1)
+    q <- paste0(q, " where date = '", tbl$date[i], "'")
   dbSendQuery(con, q)
 }
 
@@ -60,13 +63,16 @@ query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
-  query <- paste0("insert into usgs_csi values ('", rownames(csi)[l], "-01'")
+  date_check <- dbGetQuery(con, paste0("select count(date) as ct from usgs_csi where date = '", rownames(csi)[l], "-01'"))
+  in_up <- if (date_check$ct == 1) "update" else "insert into"
+  query <- paste0(in_up, " usgs_csi set date = '", rownames(csi)[l], "-01'")
   for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
     for (i in 1:dim(csi)[3]) {
       c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
       query <- paste0(query, ", `", substr(dimnames(csi)[[3]][i], 1, nchar(dimnames(csi)[[3]][i]) - 9), "_csi", k, "` = ", c)
     }
-  query <- paste0(query, ") on duplicate key update date = date")
+  if (date_check$ct == 1)
+    query <- paste0(query, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, query)
 }
 setwd("..")
