@@ -78,7 +78,7 @@ for (j in c("salinity", "temperature", "stage")) {
     query <- paste0(in_up, " coastal_sc_ga set date='", v$datetime[i], "'")
     for (k in 2:dim(v)[2]) {
       if (is.na(v[i, k])) tmp <- "NULL" else tmp <- v[i, k]
-      query <- paste0(query, ", ", names(v)[k], " = ", tmp)
+      query <- paste0(query, ", `", names(v)[k], "` = ", tmp)
     }
     if (date_check$ct == 1)
       query <- paste0(query, " where date = '", range[i], "'")

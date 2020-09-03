@@ -1,5 +1,6 @@
 library (RMySQL)
 library (CSI)
+library (RCurl)
 
 setwd("./coastal_EDEN")
 source ("../admin_pwd.R")
@@ -74,5 +75,19 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
   if (date_check$ct == 1)
     query <- paste0(query, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, query)
+}
+write.csv(sal, "./csi/usgs_CSI_calculation_data.csv", quote = F, row.names = F)
+err <- try (ftpUpload("./csi/usgs_CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/CSI_calculation_data.csv"))
+query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
+for (j in 2:dim(db)[1]) {
+  q <- paste0("select date, `", db$COLUMN_NAME[j], "`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_code`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_param` from usgs_salinity order by date")
+  sal <- dbGetQuery(con, q)
+  write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
+  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.csv")))
+  q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
+  sal <- dbGetQuery(con, q)
+  csi <- CSIcalc(sal)
+  CSIwrite(csi, "./csi")
+  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".csv"), .opts = list(forbid.reuse = 1)))
 }
 setwd("..")
