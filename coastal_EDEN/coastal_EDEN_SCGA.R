@@ -131,8 +131,6 @@ for (i in 1:dim(gages)[1]) {
   query <- paste0("select date_format(date, '%Y') as Year, date_format(date, '%m') as Month, ", gages$NWIS_ID[i], "_salinity as `", gages$NWIS_ID[i], "` from coastal_sc_ga order by date")
   sal <- dbGetQuery(con, query)
   sal <- sal[!is.na(sal[, 3]), ]
-  sal$Date <- as.Date(paste0(sal$Year, "-", sal$Month, "-01"))
-  sal <- sal[, 1:3]
   sal <- group_by(sal, Year, Month)
   sal <- summarize_all(sal, mean)
   sal <- as.data.frame(sal)

@@ -26,8 +26,8 @@ for (i in 1:length(db$station_name_web)) {
   tmp <- unlist(strsplit(db$coastal[i], ';'))
   for (j in 1:length(tmp)) {
     tmp2 <- substr(tmp[j], 1, 2)
-    column <- paste(db$station_name_web[i], switch (tmp2, st = 'stage', te = 'temperature', sa = 'salinity'), sep = '_')
-    code <- switch (tmp2, st = '00065', te = '00010', sa = '00480')
+    column <- paste(db$station_name_web[i], switch (tmp2, st = 'stage', gw = 'stage', te = 'temperature', sa = 'salinity'), sep = '_')
+    code <- switch (tmp2, st = '00065', gw = '62611', te = '00010', sa = '00480')
     params[dim(params)[1] + 1, ] <- c(column, db$usgs_nwis_id[i], code)
   }
 }
