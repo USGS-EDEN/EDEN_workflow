@@ -1,6 +1,7 @@
 library (dplyr)
 library (RMySQL)
 library (CSI)
+library (RCurl)
 
 setwd("./coastal_EDEN")
 source ("../admin_pwd.R")
@@ -8,26 +9,33 @@ source ("../admin_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "igsafpesgsz03.er.usgs.gov")
 
 ga <- c("acespwq", "apaebwq", "cbmocwq", "cbmrrwq", "cbvtcwq", "delslwq", "gndbhwq", "gndblwq", "grblrwq", "grborwq", "grbsqwq", "gtmpcwq", "hudscwq", "hudtnwq", "hudtswq", "jacb6wq", "jacnewq", "job09wq", "job20wq", "marscwq", "nartbwq", "niwdcwq", "niwolwq", "nocrcwq", "noczbwq", "rkblhwq", "sapldwq", "welinwq", "welsmwq", "wkbfrwq", "wqbmhwq")
-sd <- format(Sys.Date() - 14, "%Y%m%d"); ed <- format(Sys.Date() - 1, "%Y%m%d")
-for (i in ga) {
-  print(i)
-  url <- paste0("https://sofia.usgs.gov/eden/programs/nerrs.php?gage=", i, "&sd=", sd, "&ed=", ed)
-  g <- read.table(url, header = T, sep = "\t", colClasses = c("character", "numeric", "NULL", "NULL"))
-  if (dim(g)[1]) {
-    g$datetimestamp <- as.Date(g$datetimestamp, tz = "EST", format = "%m/%d/%Y %H:%M")
-    g <- g %>% group_by(datetimestamp) %>% summarise(sal = mean(sal, na.rm = T))
-    g$sal[g$sal < 0] <- NA
-    for (j in 1:dim(g)[1]) {
-      iu <- dbGetQuery(con, paste0("select date from nerrs_salinity where date = '", g$datetimestamp[j], "'"))
-      if (dim(iu)[1]) {
-        q <- paste0("update nerrs_salinity set ", i, "_salinity = ")
-        if (is.na(g$sal[j])) q <- paste0(q, "NULL") else q <- paste0(q, g$sal[j], "")
-        q <- paste0(q, " where date = '", g$datetimestamp[j], "'")
-      } else {
-        q <- paste0("insert into nerrs_salinity (date, ", i, "_salinity) values ('", g$datetimestamp[j], "', ")
-        if (is.na(g$sal[j])) q <- paste0(q, "NULL)") else q <- paste0(q, g$sal[j], ")")
+# 10 days is the maximum full days before hitting 1000 record limit
+sd <- format(Sys.Date() - 10, "%Y%m%d"); ed <- format(Sys.Date() - 1, "%Y%m%d")
+for (k in c("salinity", "temperature", "stage")) {
+  for (i in ga) {
+    print(paste(i, k))
+    url <- paste0("https://sofia.usgs.gov/eden/programs/nerrs.php?gage=", i, "&sd=", sd, "&ed=", ed)
+    g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 6)))
+    if (dim(g)[1]) {
+      g$datetimestamp <- as.Date(g$datetimestamp, tz = "EST", format = "%m/%d/%Y %H:%M")
+      g <- g %>% mutate(stage = coalesce(clevel, level, cdepth, depth))
+      g <- g[, c(1:3, 8)]
+      names(g)[c(2, 3)] <- c("salinity", "temperature")
+      g$salinity[g$salinity < 0] <- NA
+      g$temperature[g$temperature < -99.99] <- NA
+      g <- g %>% group_by(datetimestamp) %>% summarise(!!k := mean(get(k), na.rm = T))
+      for (j in 1:dim(g)[1]) {
+        iu <- dbGetQuery(con, paste0("select date from nerrs_", k, " where date = '", g$datetimestamp[j], "'"))
+        if (dim(iu)[1]) {
+          q <- paste0("update nerrs_", k, " set ", i, "_", k, " = ")
+          if (is.na(g[j, k]) | g[j, k] > 99.99) q <- paste0(q, "NULL") else q <- paste0(q, g[j, k])
+          q <- paste0(q, " where date = '", g$datetimestamp[j], "'")
+        } else {
+          q <- paste0("insert into nerrs_", k, " (date, ", i, "_", k, ") values ('", g$datetimestamp[j], "', ")
+          if (is.na(g[j, k]) | g[j, k] > 99.99) q <- paste0(q, "NULL)") else q <- paste0(q, g[j, k], ")")
+        }
+        dbSendQuery(con, q)
       }
-      dbSendQuery(con, q)
     }
   }
 }
@@ -68,4 +76,46 @@ for (j in 2:dim(db)[1]) {
   CSIwrite(csi, "./csi")
   err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".csv"), .opts = list(forbid.reuse = 1)))
 }
+
+#t <- "create table nerrs_stage_per (date date NOT NULL primary key"
+#for (i in ga)
+#  for (j in c(7, 14, 30, 60, 90))
+#    t <- paste0(t, ", ", i, "_stage_", j, "day tinyint unsigned default NULL")
+#t <- paste0(t, ")")
+#dbSendQuery(con, t)
+q2 <- paste0("update nerrs_stage_per set date = '", Sys.Date() - 1, "'")
+for (j in c(7, 14, 30, 60, 90)) {
+  q <- "SELECT date"
+  for (i in ga)
+    q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
+  q <- paste0(q, " FROM nerrs_stage WHERE DAYOFYEAR(date) >= DAYOFYEAR('", Sys.Date() - j, "') AND DAYOFYEAR(date) <= DAYOFYEAR('", Sys.Date() - 1, "') GROUP BY YEAR(date)")
+  st <- dbGetQuery(con, q)
+  for (i in 2:dim(st)[2]) {
+    p <- quantile(st[, i] ,c(0, .1, .25, .75, .9, 1), na.rm = T)
+    m <- ifelse(st[dim(st)[1], i] == p[1], 1, ifelse(st[dim(st)[1], i] == p[6], 7, which.max(p > st[dim(st)[1], i])))
+    m <- ifelse(is.na(m), "NULL", m)
+    q2 <- paste0(q2, ", ", ga[i - 1], "_stage_", j, "day = ", m)
+  }
+}
+dbSendQuery(con, q2)
+q2 <- paste0("update nerrs_stage_change set date = '", Sys.Date() - 1, "'")
+for (j in c(7, 14, 30, 60, 90)) {
+  q <- "SELECT date"
+  for (i in ga)
+    q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
+  q <- paste0(q, " FROM nerrs_stage WHERE date >= '", Sys.Date() - j, "' AND date <= '", Sys.Date() - 1, "' GROUP BY YEAR(date)")
+  st <- dbGetQuery(con, q)
+  r <- "SELECT date"
+  for (i in ga)
+    r <- paste0(r, ", AVG(", i, "_stage) AS avg_", i, "_stage")
+  r <- paste0(r, " FROM nerrs_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "' GROUP BY YEAR(date)")
+  st2 <- dbGetQuery(con, r)
+  p <- st[, 2:dim(st)[2]] - st2[, 2:dim(st)[2]] * 3.28
+  for (i in 1:length(p)) {
+    m <- ifelse(p[i] <= -2, 1, ifelse(p[i] <= -1, 2, ifelse(p[i] <= 0, 3, ifelse(p[i] <= 1, 4, ifelse(p[i] <= 1, 4, ifelse(p[i] <= 2, 5, ifelse(p[i] <= 3, 6, 7)))))))
+    m <- ifelse(is.na(m), "NULL", m)
+    q2 <- paste0(q2, ", ", ga[i], "_stage_", j, "day = ", m)
+  }
+}
+dbSendQuery(con, q2)
 setwd("..")
