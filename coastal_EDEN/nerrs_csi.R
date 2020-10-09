@@ -15,12 +15,12 @@ for (k in c("salinity", "temperature", "stage")) {
   for (i in ga) {
     print(paste(i, k))
     url <- paste0("https://sofia.usgs.gov/eden/programs/nerrs.php?gage=", i, "&sd=", sd, "&ed=", ed)
-    g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 6)))
+    g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 4)))
     if (dim(g)[1]) {
       g$datetimestamp <- as.Date(g$datetimestamp, tz = "EST", format = "%m/%d/%Y %H:%M")
-      g <- g %>% mutate(stage = coalesce(clevel, level, cdepth, depth))
-      g <- g[, c(1:3, 8)]
-      names(g)[c(2, 3)] <- c("salinity", "temperature")
+      if (i == "welinwq" | i == "delslwq") g$cdepth <- g$clevel
+      g <- g[, 1:4]
+      names(g)[2:4] <- c("salinity", "temperature", "stage")
       g$salinity[g$salinity < 0] <- NA
       g$temperature[g$temperature < -99.99] <- NA
       g <- g %>% group_by(datetimestamp) %>% summarise(!!k := mean(get(k), na.rm = T))

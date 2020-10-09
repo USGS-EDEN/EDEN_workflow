@@ -7,13 +7,13 @@ source ("../admin_pwd.R")
 # Connect to database, list of gages for which to acquire data
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "igsafpesgsz03.er.usgs.gov")
 
-gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
+all_gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
 sd <- Sys.Date() - 14; ed <- Sys.Date() - 1
 tbl <- NULL
 for (k in c("salinity", "temperature", "stage")) {
+  gages <- switch (k, salinity = all_gages[all_gages$param == "00095" | all_gages$param == "00480", ], temperature = all_gages[all_gages$param == "00010", ], stage = all_gages[all_gages$param == "00065", ])
   for (i in 1:dim(gages)[1]) {
-    p <- switch (k, salinity = gages$param[i], temperature = "00010", stage = "00065")
-    url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$gage[i], "&startDT=", sd, "&endDT=", ed, "&parameterCd=", p, "&statCd=00003&access=3")
+    url <- paste0("https://waterservices.usgs.gov/nwis/dv/?format=rdb&sites=", gages$gage[i], "&startDT=", sd, "&endDT=", ed, "&parameterCd=", gages$param[i], "&statCd=00003&access=3")
     gage <- read.table(url, header = T, sep = "\t", colClasses = "character", check.names = F)
     gage <- gage[2:dim(gage)[1], ]
     print(paste(gages$gage[i], k))
@@ -21,27 +21,28 @@ for (k in c("salinity", "temperature", "stage")) {
     if (dim(gage)[1] != 1) {
       names(gage)[3] <- "date"
       gage$date <- as.Date(gage$date)
-      gage[, 4] <- gsub("[^0-9.-]", "", gage[, 4])
-      gage[, 4] <- as.numeric(gage[, 4])
-      if (p == "00095") {
+      ts_col <- which(names(gage) == paste0(gages$tsid[i], "_", gages$param[i], "_00003"))
+      gage[, ts_col] <- gsub("[^0-9.-]", "", gage[, ts_col])
+      gage[, ts_col] <- as.numeric(gage[, ts_col])
+      if (gages$param[i] == "00095") {
         k1 <- 0.0120    # Wagner et al., 2006
         k2 <- -0.2174
         k3 <- 25.3283
         k4 <- 13.7714
         k5 <- -6.4788
         k6 <- 2.5842
-        r <- gage[, 4] / 53087
-        gage[, 4] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
+        r <- gage[, ts_col] / 53087
+        gage[, ts_col] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
       }
-      gage[, 4] <- round(gage[, 4], 2)
-      gage[, 6] <- names(gage[4])
-      names(gage)[4] <- paste0(gage$site_no[1], "_", k)
-      names(gage)[5] <- paste0(gage$site_no[1], "_code")
-      names(gage)[6] <- paste0(gage$site_no[1], "_param")
+      gage[, ts_col] <- round(gage[, ts_col], 2)
+      gage[, ts_col + 2] <- names(gage[ts_col])
+      names(gage)[ts_col] <- paste0(gage$site_no[1], "_", k)
+      names(gage)[ts_col + 1] <- paste0(gage$site_no[1], "_code")
+      names(gage)[ts_col + 2] <- paste0(gage$site_no[1], "_param")
       if (is.null(tbl)) {
-        tbl <- gage[, 3:6]
+        tbl <- gage[, c(3, ts_col:(ts_col + 2))]
       } else {
-        tbl <- merge(tbl, gage[, 3:6], all = T)
+        tbl <- merge(tbl, gage[, c(3, ts_col:(ts_col + 2))], all = T)
       }
     }
   }
@@ -85,7 +86,7 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
 write.csv(sal, "./csi/usgs_CSI_calculation_data.csv", quote = F, row.names = F)
 err <- try (ftpUpload("./csi/usgs_CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/CSI_calculation_data.csv"))
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
-for (j in 2:dim(db)[1]) {
+for (j in 1:dim(db)[1]) {
   q <- paste0("select date, `", db$COLUMN_NAME[j], "`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_code`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_param` from usgs_salinity order by date")
   sal <- dbGetQuery(con, q)
   write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)

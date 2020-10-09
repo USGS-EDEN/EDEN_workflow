@@ -31,15 +31,35 @@ dem <- ncvar_get(dem.nc, "dem")
 nc_close(dem.nc)
 
 # Set up WL files
-cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
-unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
-file.rename(paste0("../surfaces/", cur_qtr, "_v3rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
-pre_qtr <- paste0(as.POSIXlt(Sys.Date() - 90)$year + 1900, "_", tolower(quarters(Sys.Date() - 90)))
-err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", pre_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", pre_qtr, ".zip")))
-unzip(paste0("../surfaces/", pre_qtr, ".zip"), exdir = "../surfaces")
-file.rename(paste0("../surfaces/", pre_qtr, "_v3rt.nc"), paste0("../surfaces/", pre_qtr, ".nc"))
-unlink("../surfaces/*.zip")
+td <- Sys.Date() - 1
+yr <- as.POSIXlt(td)$year + 1900
+if (td == as.Date(paste0(yr, "-01-01"))) j <- 4
+if (td %in% as.Date(paste0(yr, "-01-02")):as.Date(paste0(yr, "-06-30"))) j <- 2
+if (td %in% as.Date(paste0(yr, "-07-01")):as.Date(paste0(yr, "-09-30"))) j <- 3
+if (td %in% as.Date(paste0(yr, "-10-01")):as.Date(paste0(yr, "-12-31"))) j <- 4
+if (!as.POSIXlt(td)$year %% 4 & as.POSIXlt(td)$yday >= 59) {
+  doy <- as.POSIXlt(td)$yday - 1
+} else doy <- as.POSIXlt(td)$yday
+if (doy >= 0 & doy <= 89) {
+  qtr <- 1
+} else if (doy >= 90 & doy <= 180) {
+  qtr <- 2
+} else if (doy >= 181 & doy <= 272) {
+  qtr <- 3
+} else {
+  qtr <- 4
+}
+surf_files <- NULL
+for (i in 1:j) {
+  err <- try (download.file(paste0("https://sflthredds.er.usgs.gov/thredds/fileServer/eden/surfaces/", yr, "_q", qtr, ".nc"), paste0("../surfaces/", yr, "_q", qtr, ".nc")))
+  surf_files <- c(surf_files, paste0("../surfaces/", yr, "_q", qtr, ".nc"))
+  if (qtr == 1) {
+    qtr <- 4
+    yr <- yr - 1
+  } else qtr <- qtr - 1
+}
+yr <- as.POSIXlt(td)$year + 1900
+surf_files <- rev(surf_files)
 
 # Define subareas
 pixels <- read.csv("./input/CSSS_EDEN_subpop_key.csv")
@@ -70,14 +90,13 @@ grid_AX <- grid_AX[(max(which(rowSums(grid_AX, na.rm = T) == 0)) + 1):dim(grid_A
 
 # Build depth arrays
 time <- NULL
-surf_files <- c(paste0("../surfaces/", pre_qtr, ".nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 for (i in 1:length(sub)) assign(paste0("depth_", sub[i]), NULL)
 for (i in 1:length(surf_files)) {
   print(paste("Building subareas for", surf_files[i]))
   s.nc <- nc_open(surf_files[i])
   s <- ncvar_get(s.nc, "stage", collapse_degen = F)
   t <- ncvar_get(s.nc, "time")
-  time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + t, recursive = T), origin = "1970/1/1")
+  time <- as.Date(c(time, as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + t, recursive = T), origin = "1970/1/1")
   nc_close(s.nc)
   for (j in 1:length(sub)) {
     d_sub <- s[get(paste0("xmin_", sub[j])):get(paste0("xmax_", sub[j])), get(paste0("ymin_", sub[j])):get(paste0("ymax_", sub[j])), ]
@@ -94,8 +113,10 @@ df <- data.frame(date = as.Date(time))
 for (i in 1:length(sub)) {
   print(paste("Calculating stats for", sub[i]))
   dim <- sum(!is.na(get(paste0("grid_", sub[i])))) # number of cells in subarea
+  dry_cnt <- dhp_cnt <- 0
   for (j in 1:dim(df)[1]) {
-    df[j, paste0("per_dry_", sub[i])] <- round(sum(get(paste0("dry_", sub[i]))[, , j], na.rm = T) / dim, 3) * 100
+    d <- sum(get(paste0("dry_", sub[i]))[, , j], na.rm = T) / dim
+    df[j, paste0("per_dry_", sub[i])] <- round(d, 3) * 100
     df[j, paste0("per_dry17cm_", sub[i])] <- round(sum(ifelse(get(paste0("depth_", sub[i]))[, , j] <= 17, 1, 0), na.rm = T) / dim, 3) * 100
   }
   for (j in 40:dim(df)[1]) {
@@ -142,7 +163,7 @@ js2$Date <- as.Date(js2$Date, format = "%m/%d/%Y")
 cols <- which(names(js2) %in% paste0("mean.cm.water.depth.area.", c("A", "AX", "B", "C", "D", "E", "F")))
 yr <- as.Date(format(Sys.Date(), "%Y-01-01")) - 1
 yr <- c(as.Date(format(yr, "%Y-01-01")), yr)
-doy <- as.POSIXlt(Sys.Date() - 1)$yday
+doy <- as.POSIXlt(td)$yday
 w_yr <- if (doy < 305) format(yr[1], "%Y") else as.numeric(format(yr[1], "%Y")) + 1
 d_yr <- if (doy < 121) as.numeric(format(yr[1], "%Y")) - 1 else format(yr[1], "%Y")
 wet <- c(as.Date(paste0(w_yr, "-05-01")), as.Date(paste0(w_yr, "-10-31")))
@@ -216,10 +237,10 @@ err <- try (ftpUpload("./output/recent_week_subpop_mean_water_depth.png", "ftp:/
 
 # Generate depth surface images
 col <- c("deepskyblue", "steelblue", "blue3", "blue4")
-s.nc <- nc_open(surf_files[2])
+s.nc <- nc_open(surf_files[length(surf_files)])
 s <- ncvar_get(s.nc, "stage", collapse_degen = F)
 time <- ncvar_get(s.nc, "time")
-time <- as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S +0000") + time
+time <- as.Date(s.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + time
 nc_close(s.nc)
 d <- sweep(s, c(1, 2), dem, "-")
 for (i in 1:length(time)) {
@@ -241,22 +262,22 @@ for (i in 1:length(time)) {
 }
 
 # Generate PDF report
-if (!as.POSIXlt(Sys.Date() - 1)$year %% 4 & as.POSIXlt(Sys.Date() - 1)$yday >= 59) {
-  doy <- as.POSIXlt(Sys.Date() - 1)$yday
-} else doy <- as.POSIXlt(Sys.Date() - 1)$yday
+if (!as.POSIXlt(td)$year %% 4 & as.POSIXlt(td)$yday >= 59) {
+  doy <- as.POSIXlt(td)$yday - 1
+} else doy <- as.POSIXlt(td)$yday
 
 if (doy >= 0 & doy <= 89) {
   qtr <- 1; z <- doy
 } else if (doy >= 90 & doy <= 180) {
-  qtr <- 2; z <- doy - 89
+  qtr <- 2; z <- doy - 90
 } else if (doy >= 181 & doy <= 272) {
-  qtr <- 3; z <- doy - 180
+  qtr <- 3; z <- doy - 181
 } else {
   qtr <- 4; z <- doy - 272
 }
 
 # Set up WL files
-yr <- as.POSIXlt(Sys.Date() - 1)$year + 1900
+yr <- as.POSIXlt(td)$year + 1900
 for (i in 1991:yr)
   if (!file.exists(paste0("../surfaces/", i, "_q", qtr, ".nc")))
     err <- try (download.file(paste0("https://sflthredds.er.usgs.gov/thredds/fileServer/eden/surfaces/", i, "_q", qtr, ".nc"), paste0("../surfaces/", i, "_q", qtr, ".nc")))
@@ -287,18 +308,18 @@ for (i in 1:length(sub))
 dt$tot <- rowSums(dt[, c(2, 6:(length(sub) + 1))])
 dt[, 2:(length(sub) + 2)] <- dt[, 2:(length(sub) + 2)] * 0.4 * 0.4
 
-pdf(paste0("./output/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"), width = 8.5, height = 11)
-grid.text(paste0("Cape Sable Seaside Sparrow Habitat Conditions (Sparrow Viewer Tool)\nAmount of Dry\u00B9 Habitat Area (km\u00B2) by Subpopulation\n", format(Sys.Date() - 1, "%m/%d/%Y"), " Compared to ", format(Sys.Date() - 1, "%m/%d"), " on Previous Years of Record"), y = 0.95, gp = gpar(fontsize = 16, fontface = "bold"))
+pdf(paste0("./output/csss_yr_cmp_report_", format(td, "%Y%m%d"), ".pdf"), width = 8.5, height = 11)
+grid.text(paste0("Cape Sable Seaside Sparrow Habitat Conditions (Sparrow Viewer Tool)\nAmount of Dry\u00B9 Habitat Area (km\u00B2) by Subpopulation\n", format(td, "%m/%d/%Y"), " Compared to ", format(td, "%m/%d"), " on Previous Years of Record"), y = 0.95, gp = gpar(fontsize = 16, fontface = "bold"))
 grid.table(dt, rows = NULL, cols = c("Date", "AX", "A", "A1", "A2", "B", "C", "D", "E", "F", "Total"))
 grid.text("Total Area (km\u00B2)\nWithin Each\nSubpopulation:", x = 0.1, y = 0.11, gp = gpar(fontface = "bold"))
 grid.text("332.48    260.96    84    48.32    171.04    37.76    39.36    102.08    24.16     706.88", x = 0.56, y = 0.12, gp = gpar(fontface = "bold"))
 grid.text("1 Dry Habitat is defined as areas where the water table is below ground level.", y = 0.05)
-bc1 <- barchart(dt$tot ~ dt$date, horizontal = F, ylab = "km\u00B2", ylim = c(0, max(dt$tot) + 50), main = paste0("Cape Sable Seaside Sparrows (CSSS)\nAmount of dry habitat (km\u00B2) on ", format(Sys.Date() - 1, "%m/%d/%Y"), " compared to\n", format(Sys.Date() - 1, "%m/%d"), " in previous years of record, all CSSS subpopulations"), col = "darkolivegreen4", scales = list(x = list(labels = c(91:99, "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", 10:17))))
-bc2 <- barchart(dt$dry_AX ~ dt$date, horizontal = F, ylab = "km\u00B2", ylim = c(0, max(dt$dry_AX) + 25), main = paste0("Cape Sable Seaside Sparrows (CSSS)\nAmount of dry habitat (km\u00B2) on ", format(Sys.Date() - 1, "%m/%d/%Y"), " compared to\n", format(Sys.Date() - 1, "%m/%d"), " in previous years of record, CSSS-subpopulation AX"), col = "firebrick", scales = list(x = list(labels = c(91:99, "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", 10:17))))
+bc1 <- barchart(dt$tot ~ dt$date, horizontal = F, ylab = "km\u00B2", ylim = c(0, max(dt$tot) + 50), main = paste0("Cape Sable Seaside Sparrows (CSSS)\nAmount of dry habitat (km\u00B2) on ", format(td, "%m/%d/%Y"), " compared to\n", format(td, "%m/%d"), " in previous years of record, all CSSS subpopulations"), col = "darkolivegreen4", scales = list(x = list(labels = c(91:99, "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", 10:17))))
+bc2 <- barchart(dt$dry_AX ~ dt$date, horizontal = F, ylab = "km\u00B2", ylim = c(0, max(dt$dry_AX) + 25), main = paste0("Cape Sable Seaside Sparrows (CSSS)\nAmount of dry habitat (km\u00B2) on ", format(td, "%m/%d/%Y"), " compared to\n", format(td, "%m/%d"), " in previous years of record, CSSS-subpopulation AX"), col = "firebrick", scales = list(x = list(labels = c(91:99, "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", 10:17))))
 print(bc1, position = c(0, 0.5, 1, 1), more = T)
 print(bc2, position = c(0, 0, 1, 0.5))
 dev.off()
 
-ftpUpload(paste0("./output/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"))
-ftpUpload(paste0("./output/csss_yr_cmp_report_", format(Sys.Date() - 1, "%Y%m%d"), ".pdf"), "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report.pdf")
+ftpUpload(paste0("./output/csss_yr_cmp_report_", format(td, "%Y%m%d"), ".pdf"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report_", format(td, "%Y%m%d"), ".pdf"))
+ftpUpload(paste0("./output/csss_yr_cmp_report_", format(td, "%Y%m%d"), ".pdf"), "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/csss_yr_cmp_report.pdf")
 setwd("..")
