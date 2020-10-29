@@ -69,12 +69,14 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 53) r <- c(r, i)
+sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
   date_check <- dbGetQuery(con, paste0("select count(date) as ct from usgs_csi where date = '", rownames(csi)[l], "-01'"))
   in_up <- if (date_check$ct == 1) "update" else "insert into"
   query <- paste0(in_up, " usgs_csi set date = '", rownames(csi)[l], "-01'")
-  for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
+  for (k in 1:24)
     for (i in 1:dim(csi)[3]) {
       c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
       query <- paste0(query, ", `", substr(dimnames(csi)[[3]][i], 1, nchar(dimnames(csi)[[3]][i]) - 9), "_csi", k, "` = ", c)
@@ -87,15 +89,15 @@ write.csv(sal, "./csi/usgs_CSI_calculation_data.csv", quote = F, row.names = F)
 err <- try (ftpUpload("./csi/usgs_CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/CSI_calculation_data.csv"))
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
 for (j in 1:dim(db)[1]) {
-  q <- paste0("select date, `", db$COLUMN_NAME[j], "`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_code`, `", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_param` from usgs_salinity order by date")
-  sal <- dbGetQuery(con, q)
-  write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
-  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.csv")))
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
-  csi <- CSIcalc(sal)
-  CSIwrite(csi, "./csi")
-  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".csv"), .opts = list(forbid.reuse = 1)))
+  if(length(which(!is.na(sal[, 3]))) > 53) {
+    write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
+    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.csv")))
+    csi <- CSIcalc(sal)
+    CSIwrite(csi, "./csi")
+    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".csv"), .opts = list(forbid.reuse = 1)))
+  }
 }
 
 #t <- "create table usgs_stage_per (date date NOT NULL primary key"

@@ -33,7 +33,7 @@ AND TABLE_NAME = 'nps_", j, "'"))
     in_up <- if (date_check$ct == 1) "update" else "insert into"
     q <- paste0(in_up, " nps_", j, " set date = '", tbl$date[i], "'")
     for (k in 2:dim(tbl)[2]) {
-      if (is.na(tbl[i, k]) | tbl[i, k] < -99.99) tmp <- "NULL" else tmp <- paste0("'", tbl[i, k], "'")
+      if (is.na(tbl[i, k]) | tbl[i, k] < -99.99 | tbl[i, k] > 99.99) tmp <- "NULL" else tmp <- paste0("'", tbl[i, k], "'")
       q <- paste0(q, ", ", names(tbl)[k], " = ", tmp)
     }
     if (date_check$ct == 1)
@@ -55,7 +55,7 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
   date_check <- dbGetQuery(con, paste0("select count(date) as ct from nps_csi where date = '", rownames(csi)[l], "-01'"))
   in_up <- if (date_check$ct == 1) "update" else "insert into"
   query <- paste0(in_up, " nps_csi set date = '", rownames(csi)[l], "-01'")
-  for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
+  for (k in 1:24)
     for (i in 1:dim(csi)[3]) {
       c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
       query <- paste0(query, ", ", substr(dimnames(csi)[[3]][i], 1, nchar(dimnames(csi)[[3]][i]) - 9), "_csi", k, " = ", c)

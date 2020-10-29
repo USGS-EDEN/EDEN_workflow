@@ -18,11 +18,12 @@ for (k in c("salinity", "temperature", "stage")) {
     g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 4)))
     if (dim(g)[1]) {
       g$datetimestamp <- as.Date(g$datetimestamp, tz = "EST", format = "%m/%d/%Y %H:%M")
-      if (i == "welinwq" | i == "delslwq") g$cdepth <- g$clevel
-      g <- g[, 1:4]
-      names(g)[2:4] <- c("salinity", "temperature", "stage")
-      g$salinity[g$salinity < 0] <- NA
-      g$temperature[g$temperature < -99.99] <- NA
+      if (i == "welinwq" | i == "delslwq") { g$cdepth <- g$clevel; g$f_cdepth <- g$f_clevel }
+      g <- g[, 1:7]
+      names(g)[c(2, 4, 6)] <- c("salinity", "temperature", "stage")
+      g$salinity[g$salinity < 0 | g$f_sal < 0] <- NA
+      g$temperature[g$temperature < -99.99 | g$f_temp <0] <- NA
+      g$stage[g$f_cdepth < 0] <- NA
       g <- g %>% group_by(datetimestamp) %>% summarise(!!k := mean(get(k), na.rm = T))
       for (j in 1:dim(g)[1]) {
         iu <- dbGetQuery(con, paste0("select date from nerrs_", k, " where date = '", g$datetimestamp[j], "'"))
@@ -53,7 +54,7 @@ for (l in 1:dim(csi)[1]) {
   date_check <- dbGetQuery(con, paste0("select count(date) as ct from nerrs_csi where date = '", rownames(csi)[l], "-01'"))
   in_up <- if (date_check$ct == 1) "update" else "insert into"
   q <- paste0(in_up, " nerrs_csi set date = '", rownames(csi)[l], "-01'")
-  for (k in c(1, 2, 3, 6, 9, 12, 18, 24))
+  for (k in 1:24)
     for (i in 1:dim(csi)[3]) {
       c <- if(is.na(csi[l, k, i])) "NULL" else csi[l, k, i]
       q <- paste0(q, ", `", strsplit(dimnames(csi)[[3]][i], "_")[[1]][1], "_csi", k, "` = ", c)
