@@ -60,10 +60,23 @@ dt$mday <- 1
 dt$mon <- 0
 dt$year <- dt$year - 1
 dt <- as.Date(dt)
-new <- strftime(seq(dt, (seq(dt, length = 2, by = "year") - 1)[2], 1), "%m/%d/%Y")
-et <- read.table(paste0("./et/et_", strftime(dt, "%Y"), ".txt"), colClasses = c("character", "NULL", "NULL", "integer", "numeric"), col.names = c("date", "NULL", "NULL", "pixel", "et"))
-for (i in 1:length(db$station_name))
-  new <- merge(new, et[which(et$pixel == db$pixel[i]), c("date", "et")], by = 1, all = T)
+pixel[, 2:3] <- round(pixel[, 2:3], 4)
+#new <- strftime(seq(dt, (seq(dt, length = 2, by = "year") - 1)[2], 1), "%m/%d/%Y")
+new <- data.frame(date = strftime(seq(dt, (seq(dt, length = 2, by = "year") - 1)[2], 1), "%m/%d/%Y"))
+#et <- read.table(paste0("./et/et_", strftime(dt, "%Y"), ".txt"), colClasses = c("character", "NULL", "NULL", "integer", "numeric"), col.names = c("date", "NULL", "NULL", "pixel", "et"))
+et.nc <- nc_open("~/Downloads/fl.et.2019.v.1.0.nc")
+x <- ncvar_get(et.nc, "lon")
+x <- round(x, 4)
+y <- ncvar_get(et.nc, "lat")
+y <- round(y, 4)
+et <- ncvar_get(et.nc, "PET")
+nc_close(dem.nc)
+for (i in 1:length(db$station_name)) {
+  #  new <- merge(new, et[which(et$pixel == db$pixel[i]), c("date", "et")], by = 1, all = T)
+  x_pix <- which(x == pixel$longitude[db$pixel[i]])
+  y_pix <- which(y == pixel$latitude[db$pixel[i]])
+  new <- cbind(new, et[x_pix, y_pix, ])
+}
 names(new) <- c("date", db$station_name_web)
 new$date <- as.POSIXct(new$date, tz = "EST", format = "%m/%d/%Y")
 

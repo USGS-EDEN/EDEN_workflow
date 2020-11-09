@@ -8,7 +8,7 @@ source ("../admin_pwd.R")
 con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "igsafpesgsz03.er.usgs.gov")
 
 all_gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
-sd <- Sys.Date() - 14; ed <- Sys.Date() - 1
+sd <- Sys.Date() - 90; ed <- Sys.Date() - 1
 tbl <- NULL
 for (k in c("salinity", "temperature", "stage")) {
   gages <- switch (k, salinity = all_gages[all_gages$param == "00095" | all_gages$param == "00480", ], temperature = all_gages[all_gages$param == "00010", ], stage = all_gages[all_gages$param == "00065", ])
@@ -69,7 +69,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 53) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 54) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -91,7 +91,7 @@ query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Mon
 for (j in 1:dim(db)[1]) {
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
-  if(length(which(!is.na(sal[, 3]))) > 53) {
+  if(length(which(!is.na(sal[, 3]))) > 54) {
     write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
     err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.csv")))
     csi <- CSIcalc(sal)
