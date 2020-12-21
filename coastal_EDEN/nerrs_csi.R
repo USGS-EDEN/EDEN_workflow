@@ -15,16 +15,16 @@ for (k in c("salinity", "temperature", "stage")) {
   for (i in ga) {
     print(paste(i, k))
     url <- paste0("https://sofia.usgs.gov/eden/programs/nerrs.php?gage=", i, "&sd=", sd, "&ed=", ed)
-    g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 4)))
+    g <- read.table(url, header = T, sep = "\t", colClasses = c("character", rep("numeric", 8)))
     if (dim(g)[1]) {
       g$datetimestamp <- as.Date(g$datetimestamp, tz = "EST", format = "%m/%d/%Y %H:%M")
       if (i == "welinwq" | i == "delslwq") { g$cdepth <- g$clevel; g$f_cdepth <- g$f_clevel }
       g <- g[, 1:7]
       names(g)[c(2, 4, 6)] <- c("salinity", "temperature", "stage")
       g$salinity[g$salinity < 0 | g$f_sal < 0] <- NA
-      g$temperature[g$temperature < -99.99 | g$f_temp <0] <- NA
+      g$temperature[g$temperature < -99.99 | g$f_temp < 0] <- NA
       g$stage[g$f_cdepth < 0] <- NA
-      g <- g %>% group_by(datetimestamp) %>% summarise(!!k := mean(get(k), na.rm = T))
+      g2 <- g %>% group_by(datetimestamp) %>% summarise(!!k := mean(get(k), na.rm = T))
       for (j in 1:dim(g)[1]) {
         iu <- dbGetQuery(con, paste0("select date from nerrs_", k, " where date = '", g$datetimestamp[j], "'"))
         if (dim(iu)[1]) {
