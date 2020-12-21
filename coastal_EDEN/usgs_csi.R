@@ -69,7 +69,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 54) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 55) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -91,12 +91,14 @@ query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Mon
 for (j in 1:dim(db)[1]) {
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
-  if(length(which(!is.na(sal[, 3]))) > 54) {
+  if(length(which(!is.na(sal[, 3]))) > 55) {
     write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
-    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.csv")))
+    zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_CSI_data.txt"))
+    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.zip")))
     csi <- CSIcalc(sal)
     CSIwrite(csi, "./csi")
-    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".csv"), .opts = list(forbid.reuse = 1)))
+    zip(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), c(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), "./metadata_input_data.txt"))
+    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".zip"), .opts = list(forbid.reuse = 1)))
   }
 }
 
