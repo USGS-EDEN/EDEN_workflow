@@ -69,7 +69,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 55) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 56) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -91,7 +91,7 @@ query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Mon
 for (j in 1:dim(db)[1]) {
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
-  if(length(which(!is.na(sal[, 3]))) > 55) {
+  if(length(which(!is.na(sal[, 3]))) > 56) {
     write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
     zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_CSI_data.txt"))
     err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.zip")))
@@ -112,10 +112,12 @@ gages <- dbGetQuery(con, "describe usgs_stage")
 gages <- unlist(lapply(strsplit(gages[seq(2, dim(gages)[1], 3), "Field"], "_"), "[[", 1))
 q2 <- paste0("update usgs_stage_per set date = '", Sys.Date() - 1, "'")
 for (j in c(7, 14, 30, 60, 90)) {
+  dt <- dbGetQuery(con, paste0("SELECT DAYOFYEAR('", Sys.Date() - j, "'), DAYOFYEAR('", Sys.Date() - 1, "')"))
+  ao <- if(dt[1] > dt[2]) c("OR", paste("YEAR(DATE_ADD(date, INTERVAL", j, "DAY))")) else c("AND", "YEAR(date)")
   q <- "SELECT date"
   for (i in gages)
     q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  q <- paste0(q, " FROM usgs_stage WHERE DAYOFYEAR(date) >= DAYOFYEAR('", Sys.Date() - j, "') AND DAYOFYEAR(date) <= DAYOFYEAR('", Sys.Date() - 1, "') GROUP BY YEAR(date)")
+  q <- paste0(q, " FROM usgs_stage WHERE DAYOFYEAR(date) >= DAYOFYEAR('", Sys.Date() - j, "') ", ao[1], " DAYOFYEAR(date) <= DAYOFYEAR('", Sys.Date() - 1, "') GROUP BY ", ao[2])
   st <- dbGetQuery(con, q)
   for (i in 2:dim(st)[2]) {
     p <- quantile(st[, i] ,c(0, .1, .25, .75, .9, 1), na.rm = T)
@@ -130,12 +132,12 @@ for (j in c(7, 14, 30, 60, 90)) {
   q <- "SELECT date"
   for (i in gages)
     q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  q <- paste0(q, " FROM usgs_stage WHERE date >= '", Sys.Date() - j, "' AND date <= '", Sys.Date() - 1, "' GROUP BY YEAR(date)")
+  q <- paste0(q, " FROM usgs_stage WHERE date >= '", Sys.Date() - j, "' AND date <= '", Sys.Date() - 1, "'")
   st <- dbGetQuery(con, q)
   r <- "SELECT date"
   for (i in gages)
     r <- paste0(r, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  r <- paste0(r, " FROM usgs_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "' GROUP BY YEAR(date)")
+  r <- paste0(r, " FROM usgs_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "'")
   st2 <- dbGetQuery(con, r)
   p <- st[, 2:dim(st)[2]] - st2[, 2:dim(st)[2]] * 3.28
   for (i in 1:length(p)) {

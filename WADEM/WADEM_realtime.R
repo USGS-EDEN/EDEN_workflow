@@ -28,7 +28,8 @@ dem <- ncvar_get(dem.nc, "dem")
 nc_close(dem.nc)
 
 file_surf <- tail(list.files("../surfaces", "^[0-9]{4}_q[1-4].nc$"), 2)
-cold <- c("#d73027", "#fc8d59", "#fee090", "#ffffbf", "#e0f3f8", "#91bfdb", "#4575b4")
+cold_rwb <- c("#b2182b", "#ef8a62", "#fddbc7", "#f7f7f7", "#d1e5f0", "#67a9cf", "#2166ac")
+cold_bgb <- c("#895b44", "#cdaa66", "#f5ca7b", "#7bed01", "#bdd2ff", "#73b2ff", "#0b2c7b")
 colr <- c("#762a83", "#af8dc3", "#e7d4e8", "#f7f7f7", "#d9f0d3", "#7fbf7b", "#1b7837")
 brks <- c(-1000, -8.93, 2.63, 13.29, 19.88, 31.36, 43.53, 1000)
 
@@ -41,16 +42,23 @@ for (i in 1:length(file_surf)) {
   time <- as.Date(surf.nc$dim$time$units, format = "days since %Y-%m-%dT%H:%M:%S") + t
   nc_close(surf.nc)
   depth <- sweep(stage, c(1, 2), dem, "-")
-  if (!dir.exists(paste0("./images/depth_", format(time[i],'%Y')))) dir.create(paste0("./images/depth_", format(time[i],'%Y')))
+  if (!dir.exists(paste0("./images/depth_rwb_", format(time[1],'%Y')))) dir.create(paste0("./images/depth_rwb_", format(time[1],'%Y')))
+  if (!dir.exists(paste0("./images/depth_bgb_", format(time[1],'%Y')))) dir.create(paste0("./images/depth_bgb_", format(time[1],'%Y')))
   
   for (j in 1:length(time)) {
     f <- paste0(sprintf("trans%04d", as.POSIXlt(time[j])$yday), ".png")
-    png(paste0("./images/depth_", format(time[j], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
+    png(paste0("./images/depth_rwb_", format(time[j], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
-    image(x, y, depth[, , j], col = cold, breaks = brks, axes = F, asp = 1)
+    image(x, y, depth[, , j], col = cold_rwb, breaks = brks, axes = F, asp = 1)
     text(x[1], y[10], time[j], pos = 4)
     dev.off()
-    err <- try(ftpUpload(paste0("./images/depth_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_", format(time[j], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
+    err <- try(ftpUpload(paste0("./images/depth_rwb_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_rwb_", format(time[j], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
+    png(paste0("./images/depth_bgb_", format(time[j], '%Y'), "/", f), width = 614, height = 862, bg = "transparent", type = "quartz")
+    par(mar = c(0, 0, 0, 0))
+    image(x, y, depth[, , j], col = cold_bgb, breaks = brks, axes = F, asp = 1)
+    text(x[1], y[10], as.Date(time[j]), pos = 4)
+    dev.off()
+    err <- try(ftpUpload(paste0("./images/depth_bgb_", format(time[j], '%Y'), "/", f), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/wadem/depth/depth_bgb_", format(time[j], '%Y'), "/", f), .opts = list(forbid.reuse = 1)))
   }
 }
 

@@ -89,10 +89,12 @@ for (j in 2:dim(db)[1]) {
 #dbSendQuery(con, t)
 q2 <- paste0("update nps_stage_per set date = '", Sys.Date() - 1, "'")
 for (j in c(7, 14, 30, 60, 90)) {
+  dt <- dbGetQuery(con, paste0("SELECT DAYOFYEAR('", Sys.Date() - j, "'), DAYOFYEAR('", Sys.Date() - 1, "')"))
+  ao <- if(dt[1] > dt[2]) c("OR", paste("YEAR(DATE_ADD(date, INTERVAL", j, "DAY))")) else c("AND", "YEAR(date)")
   q <- "SELECT date"
   for (i in gages)
     q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  q <- paste0(q, " FROM nps_stage WHERE DAYOFYEAR(date) >= DAYOFYEAR('", Sys.Date() - j, "') AND DAYOFYEAR(date) <= DAYOFYEAR('", Sys.Date() - 1, "') GROUP BY YEAR(date)")
+  q <- paste0(q, " FROM nps_stage WHERE DAYOFYEAR(date) >= DAYOFYEAR('", Sys.Date() - j, "') ", ao[1], " DAYOFYEAR(date) <= DAYOFYEAR('", Sys.Date() - 1, "') GROUP BY ", ao[2])
   st <- dbGetQuery(con, q)
   for (i in 2:dim(st)[2]) {
     p <- quantile(st[, i] ,c(0, .1, .25, .75, .9, 1), na.rm = T)
@@ -107,12 +109,12 @@ for (j in c(7, 14, 30, 60, 90)) {
   q <- "SELECT date"
   for (i in gages)
     q <- paste0(q, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  q <- paste0(q, " FROM nps_stage WHERE date >= '", Sys.Date() - j, "' AND date <= '", Sys.Date() - 1, "' GROUP BY YEAR(date)")
+  q <- paste0(q, " FROM nps_stage WHERE date >= '", Sys.Date() - j, "' AND date <= '", Sys.Date() - 1, "'")
   st <- dbGetQuery(con, q)
   r <- "SELECT date"
   for (i in gages)
     r <- paste0(r, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  r <- paste0(r, " FROM nps_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "' GROUP BY YEAR(date)")
+  r <- paste0(r, " FROM nps_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "'")
   st2 <- dbGetQuery(con, r)
   p <- st[, 2:dim(st)[2]] - st2[, 2:dim(st)[2]] * 3.28
   for (i in 1:length(p)) {
