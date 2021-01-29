@@ -65,6 +65,7 @@ for (i in 1:length(params$column)) {
       # Find the column that contains the data
       dd_col <- 5
       v <- cbind(v, merge(range, tmp, by.x = 1, by.y = "datetime", all.x = T)[, dd_col])
+      v[which(v[, dim(v)[2]] == ""), dim(v)[2]] <- NA
       names(v)[dim(v)[2]] <- params$column[i]
       max <- dbGetQuery(con, paste0("select max(`", params$column[i], "`) from coastal"))
       min <- dbGetQuery(con, paste0("select min(`", params$column[i], "`) from coastal"))
