@@ -50,7 +50,7 @@ for (i in 1:length(dt$date))
 write("}", "./output/por_stats.js", append = T)
 
 # Calc subarea annual stats (~3min)
-year <- data.frame(year=1991:2019)
+year <- data.frame(year=1991:2020)
 start_nest <- which(as.POSIXlt(time)$mon == 2 & as.POSIXlt(time)$mday == 1)
 end_nest <- which(as.POSIXlt(time)$mon == 6 & as.POSIXlt(time)$mday == 15)
 start_year <- which(as.POSIXlt(time)$yday == 0)

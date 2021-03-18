@@ -45,6 +45,7 @@ for (j in 1:(length(unique(z$site)) %/% 5 + 1)) {
 
 # Upload matrix to EDENdb
 for (i in 1:dim(z)[1]) {
+  if (i %% 1000 == 0) print(i)
   query <- paste0("update stage set `stage_", z$site[i], "` = ", z$value[i], ", `flag_", z$site[i], "` = ")
   if (is.na(z$flag[i])) tmp <- "NULL" else tmp <- paste0("'", z$flag[i], "'")
   query <- paste0(query, tmp, " where datetime = '", z$date_tm[i], "'")
@@ -64,7 +65,7 @@ end <- as.Date(rev(range)[1], tz = "EST")
 range <- seq.Date(start, end, by = "day")
 for (i in length(range):1) {
   dbDisconnect(con)
-  con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden_new", host = "stpweb1-dmz.er.usgs.gov")
+  con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "eden", host = "igsafpesgsz03.er.usgs.gov")
   # Select hourly values
   query2 <- "select datetime"
   for (j in 1:length(gages$station_name_web))

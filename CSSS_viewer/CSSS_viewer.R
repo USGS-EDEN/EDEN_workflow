@@ -109,13 +109,15 @@ for (i in 1:length(surf_files)) {
 for (i in 1:length(sub)) assign(paste0("dry_", sub[i]), ifelse(get(paste0("depth_", sub[i])) <= 0, 1, 0)) # dry == 1
 
 # Build statistics data.frame
-df <- data.frame(date = as.Date(time))
+df <- data.frame(date = time)
 for (i in 1:length(sub)) {
   print(paste("Calculating stats for", sub[i]))
   dim <- sum(!is.na(get(paste0("grid_", sub[i])))) # number of cells in subarea
   dry_cnt <- dhp_cnt <- 0
   for (j in 1:dim(df)[1]) {
     d <- sum(get(paste0("dry_", sub[i]))[, , j], na.rm = T) / dim
+    if (d >= 0.4 & time[j] >= paste0(yr, "-03-01")) dry_cnt <- dry_cnt + 1
+    if (d <= 0.6 & as.POSIXlt(time[j])$year + 1900 == yr) dhp_cnt <- dhp_cnt + 1
     df[j, paste0("per_dry_", sub[i])] <- round(d, 3) * 100
     df[j, paste0("per_dry17cm_", sub[i])] <- round(sum(ifelse(get(paste0("depth_", sub[i]))[, , j] <= 17, 1, 0), na.rm = T) / dim, 3) * 100
   }
@@ -131,6 +133,7 @@ for (i in 1:length(sub)) {
     df[j, paste0("depth_mean_", sub[i])] <- round(mean(get(paste0("depth_", sub[i]))[, , j], na.rm = T), 1)
     df[j, paste0("depth_sd_", sub[i])] <- round(sd(get(paste0("depth_", sub[i]))[, , j], na.rm = T), 1)
   }
+  print(dhp_cnt)
 }
 
 # Update existing stats .js

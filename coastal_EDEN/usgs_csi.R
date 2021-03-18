@@ -22,27 +22,29 @@ for (k in c("salinity", "temperature", "stage")) {
       names(gage)[3] <- "date"
       gage$date <- as.Date(gage$date)
       ts_col <- which(names(gage) == paste0(gages$tsid[i], "_", gages$param[i], "_00003"))
-      gage[, ts_col] <- gsub("[^0-9.-]", "", gage[, ts_col])
-      gage[, ts_col] <- as.numeric(gage[, ts_col])
-      if (gages$param[i] == "00095") {
-        k1 <- 0.0120    # Wagner et al., 2006
-        k2 <- -0.2174
-        k3 <- 25.3283
-        k4 <- 13.7714
-        k5 <- -6.4788
-        k6 <- 2.5842
-        r <- gage[, ts_col] / 53087
-        gage[, ts_col] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
-      }
-      gage[, ts_col] <- round(gage[, ts_col], 2)
-      gage[, ts_col + 2] <- names(gage[ts_col])
-      names(gage)[ts_col] <- paste0(gage$site_no[1], "_", k)
-      names(gage)[ts_col + 1] <- paste0(gage$site_no[1], "_code")
-      names(gage)[ts_col + 2] <- paste0(gage$site_no[1], "_param")
-      if (is.null(tbl)) {
-        tbl <- gage[, c(3, ts_col:(ts_col + 2))]
-      } else {
-        tbl <- merge(tbl, gage[, c(3, ts_col:(ts_col + 2))], all = T)
+      if (length(ts_col)) {
+        gage[, ts_col] <- gsub("[^0-9.-]", "", gage[, ts_col])
+        gage[, ts_col] <- as.numeric(gage[, ts_col])
+        if (gages$param[i] == "00095") {
+          k1 <- 0.0120    # Wagner et al., 2006
+          k2 <- -0.2174
+          k3 <- 25.3283
+          k4 <- 13.7714
+          k5 <- -6.4788
+          k6 <- 2.5842
+          r <- gage[, ts_col] / 53087
+          gage[, ts_col] <- k1 + k2 * r ^ 0.5 + k3 * r + k4 * r ^ 1.5 + k5 * r ^ 2 + k6 * r ^ 2.5
+        }
+        gage[, ts_col] <- round(gage[, ts_col], 2)
+        gage[, ts_col + 2] <- names(gage[ts_col])
+        names(gage)[ts_col] <- paste0(gage$site_no[1], "_", k)
+        names(gage)[ts_col + 1] <- paste0(gage$site_no[1], "_code")
+        names(gage)[ts_col + 2] <- paste0(gage$site_no[1], "_param")
+        if (is.null(tbl)) {
+          tbl <- gage[, c(3, ts_col:(ts_col + 2))]
+        } else {
+          tbl <- merge(tbl, gage[, c(3, ts_col:(ts_col + 2))], all = T)
+        }
       }
     }
   }
@@ -69,7 +71,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 56) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 58) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -93,11 +95,11 @@ for (j in 1:dim(db)[1]) {
   sal <- dbGetQuery(con, q)
   if(length(which(!is.na(sal[, 3]))) > 56) {
     write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
-    zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_CSI_data.txt"))
+    zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_input_data.txt"))
     err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.zip")))
     csi <- CSIcalc(sal)
     CSIwrite(csi, "./csi")
-    zip(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), c(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), "./metadata_input_data.txt"))
+    zip(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), c(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), "./metadata_CSI_data.txt"))
     err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".zip"), .opts = list(forbid.reuse = 1)))
   }
 }

@@ -88,8 +88,8 @@ for (i in 1:dim(new)[1]) {
 }
 
 # add historical data for newly-added stations
-gage <- "USSO_T"
-dt <- seq(as.Date("2002-01-01"), as.Date("2017-03-31"), by = "day")
+gage <- "WFEED_O"
+dt <- seq(as.Date("2002-01-01"), as.Date("2021-01-31"), by = "day")
 rain_old <- list.files("./rainfall/", "^rainfall_200[2-8].txt$")
 rain_new <- list.files("./rainfall/", "^rainfall_20[0-9]{4}.txt$")
 et <- list.files("./et/", "^et_[0-9]{4}.txt$")
@@ -120,6 +120,7 @@ dt2 <- merge(dt, dt2, by = 1, all.x = T)
 dt2[is.na(dt2)] <- 0
 names(dt2)[1] <- "date"
 for (i in 1:dim(dt2)[1]) {
+  if (i %% 1000 == 0) print(i)
   query <- paste0("update rainfall set `rainfall_", gage, "` = ", dt2$rain[i], " where date = '", dt2$date[i], "'")
   dbSendQuery(con, query)
 }

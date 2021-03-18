@@ -74,6 +74,8 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
 
   # List of expected upload gages from EDENdb
   gages <- dbGetQuery(con, "select station_name, station_name_web, agency_acronym as agency, utm_easting, utm_northing, dry_elevation, convert_to_navd88_feet as conv from station, agency, station_datum where station.database_agency_id = agency.agency_id and station.station_id = station_datum.station_id and edenmaster_new = 1 group by station_name order by agency, station_name_web")
+  #for quarters:
+  #gages <- dbGetQuery(con, "select station_name, station_name_web, agency_acronym as agency, utm_easting, utm_northing, dry_elevation, convert_to_navd88_feet as conv from station, agency, station_datum where station.database_agency_id = agency.agency_id and station.station_id = station_datum.station_id and edenmaster_start <= '2020q4' and edenmaster_end >= '2020q4' group by station_name order by agency, station_name_web")
   # Check presence of surfacing gages in data file
   for (i in 1:length(gages$station_name_web))
   	if (dim(z[z$station_name_web == gages$station_name_web[i], ])[1] == 0) report <- paste0(report, "Expected gage ", gages$station_name_web[i], " missing from data file\n")
