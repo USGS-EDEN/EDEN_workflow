@@ -71,7 +71,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 58) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 60) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
@@ -87,20 +87,32 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
     query <- paste0(query, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, query)
 }
+names(sal)[3:dim(sal)[2]] <- substr(names(sal)[3:dim(sal)[2]], 1, nchar(names(sal)[3:dim(sal)[2]]) - 9)
+for (i in 3:dim(sal)[2])
+  sal[, i] <- ifelse(sal[, i] < 10, sprintf("%.1f", round(sal[, i], 1)), as.character(round(sal[, i])))
 write.csv(sal, "./csi/usgs_CSI_calculation_data.csv", quote = F, row.names = F)
 err <- try (ftpUpload("./csi/usgs_CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/CSI_calculation_data.csv"))
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
 for (j in 1:dim(db)[1]) {
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from usgs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
-  if(length(which(!is.na(sal[, 3]))) > 56) {
-    write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), row.names = F)
-    zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_input_data.txt"))
-    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", db$COLUMN_NAME[j], "_input.zip")))
+  sal <- sal[which(!is.na(sal[, 3]))[1]:dim(sal)[1], ]
+  names(sal)[3] <- substr(names(sal)[3], 1, nchar(names(sal)[3]) - 9)
+  if(length(which(!is.na(sal[, 3]))) > 60) {
     csi <- CSIcalc(sal)
+    csi <- round(csi, 2)
+    sal[, 3] <- ifelse(sal[, 3] < 10, sprintf("%.1f", round(sal[, 3], 1)), as.character(round(sal[, 3])))
+    write.csv(sal, paste0("./salinity/", names(sal)[3], "_input.csv"), row.names = F)
+    zip(paste0("./salinity/", names(sal)[3], "_input.zip"), c(paste0("./salinity/", names(sal)[3], "_input.csv"), "./metadata_input_data.txt"))
+    err <- try (ftpUpload(paste0("./salinity/", names(sal)[3], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", names(sal)[3], "_input.zip")))
     CSIwrite(csi, "./csi")
-    zip(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), c(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), "./metadata_CSI_data.txt"))
-    err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".zip"), .opts = list(forbid.reuse = 1)))
+    zip(paste0("./csi/", names(sal)[3], ".zip"), c(paste0("./csi/", names(sal)[3], ".csv"), "./metadata_CSI_data.txt"))
+    err <- try (ftpUpload(paste0("./csi/", names(sal)[3], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", names(sal)[3], ".zip"), .opts = list(forbid.reuse = 1)))
+    CSIplot(csi, "./csi_plots", "bottom")
+    for (i in 1:24)
+      err <- try (ftpUpload(paste0("./csi_plots/", names(sal)[3], "_interval", i, ".png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_plots/", names(sal)[3], "_interval", i, ".png"), .opts = list(forbid.reuse = 1)))
+    CSIstack(csi, "./csi_plots", leg = "bottom")
+    err <- try (ftpUpload(paste0("./csi_plots/", names(sal)[3], "_stacked.png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_plots/", names(sal)[3], "_stacked.png"), .opts = list(forbid.reuse = 1)))
   }
 }
 

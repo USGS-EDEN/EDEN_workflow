@@ -239,7 +239,7 @@ q <- substring(q, 1, nchar(q) - 4)
 query <- paste0("select ", p, " from coastal_sc_ga where (", q, ") and date = '", days[2], "'")
 s <- dbGetQuery(con, query)
 if (length(which(is.na(s)))) {
-  to <- "bmccloskey@usgs.gov,rsyoung@usgs.gov"
+  to <- "bmccloskey@usgs.gov,rsyoung@usgs.gov,mdpetkewich@usgs.gov"
   t <- paste0(names(s)[which(is.na(s))], collapse = ", ")
   system(paste0("echo 'Subject: CoastalEDENdb_sc_ga upload report: missing CSI values 
 The following gages have missing CSI values for ", days[2], ": ", t, "' | /usr/sbin/sendmail ", to))

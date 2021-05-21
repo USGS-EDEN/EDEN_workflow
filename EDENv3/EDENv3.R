@@ -72,7 +72,7 @@ report <- if (!err) paste0(report, "WL surface file NOT transferred to THREDDS s
 err <- file.copy(output_nc_d, paste0("/Volumes/Users/bmcclosk/Desktop/depths/", yr, "_q", q, "_depth.nc"), overwrite = T)
 report <- if (!err) paste0(report, "Depth surface file NOT transferred to THREDDS server\n") else paste0(report, "Depth surface file transferred to THREDDS server\n")
 report <- paste0(report, "Check that internal THREDDS transfer succeeded (runs at 1pm): https://sflthredds.er.usgs.gov/thredds/catalog/eden/catalog.html")
-to <- "bmccloskey@usgs.gov, hhenkel@usgs.gov"
+to <- "bmccloskey@usgs.gov"
 system(paste0("echo 'Subject: THREDDS transfer ALERT
 ", report, "' | /usr/sbin/sendmail ", to))
 setwd("..")

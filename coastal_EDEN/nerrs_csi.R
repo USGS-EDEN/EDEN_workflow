@@ -63,21 +63,28 @@ for (l in 1:dim(csi)[1]) {
     q <- paste0(q, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, q)
 }
+names(sal)[3:dim(sal)[2]] <- substr(names(sal)[3:dim(sal)[2]], 1, nchar(names(sal)[3:dim(sal)[2]]) - 9)
+for (i in 3:dim(sal)[2])
+  sal[, i] <- ifelse(sal[, i] < 10, sprintf("%.1f", round(sal[, i], 1)), as.character(round(sal[, i])))
 write.csv(sal, "./csi/nerrs_CSI_calculation_data.csv", quote = F, row.names = F)
 err <- try (ftpUpload("./csi/nerrs_CSI_calculation_data.csv", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/CSI_calculation_data.csv"))
 query <- "select date_format(date, '%Y') as Year, date_format(date, '%m') as Month"
 for (j in 2:dim(db)[1]) {
   q <- paste0("select date, `", db$COLUMN_NAME[j], "` from nerrs_salinity order by date")
   sal <- dbGetQuery(con, q)
-  write.csv(sal, paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), quote = F, row.names = F)
-  zip(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), c(paste0("./csi/", db$COLUMN_NAME[j], "_input.csv"), "./metadata_CSI_data.txt"))
-  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], "_input.zip")))
+  names(sal)[2] <- substr(names(sal)[2], 1, nchar(names(sal)[2]) - 9)
+  sal[, 2] <- ifelse(sal[, 2] < 10, sprintf("%.1f", round(sal[, 2], 1)), as.character(round(sal[, 2])))
+  write.csv(sal, paste0("./salinity/", names(sal)[2], "_input.csv"), quote = F, row.names = F)
+  zip(paste0("./salinity/", names(sal)[2], "_input.zip"), c(paste0("./salinity/", names(sal)[2], "_input.csv"), "./metadata_input_data.txt"))
+  err <- try (ftpUpload(paste0("./salinity/", names(sal)[2], "_input.zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", names(sal)[2], "_input.zip")))
   q <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "` from nerrs_salinity group by Year, Month")
   sal <- dbGetQuery(con, q)
+  names(sal)[3] <- substr(names(sal)[3], 1, nchar(names(sal)[3]) - 9)
   csi <- CSIcalc(sal)
+  csi <- round(csi, 2)
   CSIwrite(csi, "./csi")
-  zip(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), c(paste0("./csi/", db$COLUMN_NAME[j], ".csv"), "./metadata_input_data.txt"))
-  err <- try (ftpUpload(paste0("./csi/", db$COLUMN_NAME[j], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", strsplit(db$COLUMN_NAME[j], "_")[[1]][1], ".zip"), .opts = list(forbid.reuse = 1)))
+  zip(paste0("./csi/", names(sal)[3], ".zip"), c(paste0("./csi/", names(sal)[3], ".csv"), "./metadata_CSI_data.txt"))
+  err <- try (ftpUpload(paste0("./csi/", names(sal)[3], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", names(sal)[3], ".zip"), .opts = list(forbid.reuse = 1)))
 }
 
 #t <- "create table nerrs_stage_per (date date NOT NULL primary key"

@@ -24,8 +24,13 @@ dt <- data.frame(date = time)
 for (i in 1:length(sub)) {
   print(sub[i])
   dim <- sum(!is.na(get(paste0("grid_", sub[i]))))
+  dry_cnt <- dhp_cnt <- 0
   for (j in 1:dim(dt)[1]) {
-    dt[j, paste0("per_dry_", sub[i])] <- round(sum(get(paste0("dry_", sub[i]))[, , j], na.rm = T) / dim, 3) * 100
+    if (as.POSIXlt(time[j])$yday == 0) { yr <- as.POSIXlt(time[j])$year + 1900; dry_cnt <- dhp_cnt <- 0 }
+    d <- sum(get(paste0("dry_", sub[i]))[, , j], na.rm = T) / dim
+    if (d >= 0.4 & time[j] >= paste0(yr, "-03-01") & time[j] >= paste0(yr, "-07-15")) dry_cnt <- dry_cnt + 1
+    if (d <= 0.6) dhp_cnt <- dhp_cnt + 1
+    dt[j, paste0("per_dry_", sub[i])] <- round(d, 3) * 100
     dt[j, paste0("per_dry17cm_", sub[i])] <- round(sum(ifelse(get(paste0("depth_", sub[i]))[, , j] <= 17, 1, 0), na.rm = T) / dim, 3) * 100
   }
   for (j in 40:dim(dt)[1]) {

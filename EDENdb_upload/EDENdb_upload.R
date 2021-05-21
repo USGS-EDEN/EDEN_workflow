@@ -170,7 +170,7 @@ for (j in 1:length(dt)) {
 err <- try (write(report, paste0("./reports/report_", format(Sys.Date(), "%Y%m%d"), ".txt")))
 # Email report of data upload
 ### System level commands may not work if local environment does not have sendmail installed!!
-to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, jmclark@usgs.gov, matthews@usgs.gov, dantolin@usgs.gov, amedenblik@usgs.gov, hhenkel@usgs.gov"
+to <- "bmccloskey@usgs.gov, mdpetkew@usgs.gov, jmclark@usgs.gov, matthews@usgs.gov, dantolin@usgs.gov, amedenblik@usgs.gov"
 system(paste0("echo 'Subject: EDENdb upload report
 ", report, "' | /usr/sbin/sendmail ", to))
 
