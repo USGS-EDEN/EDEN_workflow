@@ -137,7 +137,7 @@ if (inherits(err, "try-error")) { report <- "ISOutput_Run.txt input file not dow
 # Change ENP agency name
 gages$agency[which(gages$agency == "ENP")] <- "NPS"
 # Date range to generate files for
-dt <- seq(Sys.Date() - 4, Sys.Date() - 1, "days")
+dt <- seq(Sys.Date() - days, Sys.Date() - 1, "days")
 # Default dry values for gages missing them
 gages$dry_elevation[which(is.na(gages$dry_elevation))] <- -9999
 # Loop by dates to generate annotated daily median flag files
