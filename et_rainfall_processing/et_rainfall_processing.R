@@ -7,10 +7,11 @@
 # 07/23/2018
 #--------------
 
-print("These libraries must be installed: RMySQL")
+print("These libraries must be installed: RMySQL, ncdf4")
 # Required libraries. If not present, run:
-# install.packages("RMySQL")
+# install.packages(c("RMySQL", "ncdf4"))
 library (RMySQL)
+library (ncdf4)
 
 try (setwd("./et_rainfall_processing"), silent = T)
 source ("../admin_pwd.R")
@@ -64,7 +65,7 @@ pixel[, 2:3] <- round(pixel[, 2:3], 4)
 #new <- strftime(seq(dt, (seq(dt, length = 2, by = "year") - 1)[2], 1), "%m/%d/%Y")
 new <- data.frame(date = strftime(seq(dt, (seq(dt, length = 2, by = "year") - 1)[2], 1), "%m/%d/%Y"))
 #et <- read.table(paste0("./et/et_", strftime(dt, "%Y"), ".txt"), colClasses = c("character", "NULL", "NULL", "integer", "numeric"), col.names = c("date", "NULL", "NULL", "pixel", "et"))
-et.nc <- nc_open("~/Downloads/fl.et.2019.v.1.0.nc")
+et.nc <- nc_open("./et/fl.et.narr.2019.v.1.1.nc")
 x <- ncvar_get(et.nc, "lon")
 x <- round(x, 4)
 y <- ncvar_get(et.nc, "lat")
@@ -88,12 +89,12 @@ for (i in 1:dim(new)[1]) {
 }
 
 # add historical data for newly-added stations
-gage <- "WFEED_O"
+gage <- "3BS1_GW2"
 dt <- seq(as.Date("2002-01-01"), as.Date("2021-01-31"), by = "day")
 rain_old <- list.files("./rainfall/", "^rainfall_200[2-8].txt$")
 rain_new <- list.files("./rainfall/", "^rainfall_20[0-9]{4}.txt$")
 et <- list.files("./et/", "^et_[0-9]{4}.txt$")
-db<-dbGetQuery(con, paste0("select station_id, latitude, longitude from station where station_name_web = '", gage, "'"))
+db <- dbGetQuery(con, paste0("select station_id, latitude, longitude from station where station_name_web = '", gage, "'"))
 lat <- sapply(db$latitude, function (x) strsplit(x, ","))
 long <- sapply(db$longitude, function (x) strsplit(x, ","))
 lat_d <- as.numeric(lapply(lat, "[[", 1))
@@ -126,12 +127,16 @@ for (i in 1:dim(dt2)[1]) {
 }
 
 for(i in 1:length(et)) {
+  print(et[i])
   et2 <- read.table(paste0("./et/", et[i]), colClasses = c("character", "NULL", "NULL", "integer", "numeric"), col.names = c("date", "NULL", "NULL", "pixel", "et"))
   dt3 <- rbind(dt3, et2[which(et2$pixel == db$pixel), c("date", "et")])
 }
 dt3$date <- as.Date(dt3$date, format = "%m/%d/%Y")
+dt3$et[dt3$et == -9999.9] <- NA # bad date
 for (i in 1:dim(dt3)[1]) {
-  query <- paste0("update et set `et_", gage, "` = ", dt3$et[i], " where date = '", dt3$date[i], "'")
+  if (i %% 1000 == 0) print(i)
+  d <- ifelse(is.na(dt3$et[i]), "NULL", dt3$et[i])
+  query <- paste0("update et set `et_", gage, "` = ", d, " where date = '", dt3$date[i], "'")
   dbSendQuery(con, query)
 }
 setwd("..")
