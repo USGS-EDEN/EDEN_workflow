@@ -151,9 +151,9 @@ for (j in c(7, 14, 30, 60, 90)) {
   r <- "SELECT date"
   for (i in gages)
     r <- paste0(r, ", AVG(", i, "_stage) AS avg_", i, "_stage")
-  r <- paste0(r, " FROM usgs_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - j + 1, "'")
+  r <- paste0(r, " FROM usgs_stage WHERE date >= '", Sys.Date() - j * 2, "' AND date <= '", Sys.Date() - (j + 1), "'")
   st2 <- dbGetQuery(con, r)
-  p <- st[, 2:dim(st)[2]] - st2[, 2:dim(st)[2]] * 3.28
+  p <- (st[, 2:dim(st)[2]] - st2[, 2:dim(st)[2]]) * 3.28
   for (i in 1:length(p)) {
     m <- ifelse(p[i] <= -2, 1, ifelse(p[i] <= -1, 2, ifelse(p[i] <= 0, 3, ifelse(p[i] <= 1, 4, ifelse(p[i] <= 1, 4, ifelse(p[i] <= 2, 5, ifelse(p[i] <= 3, 6, 7)))))))
     m <- ifelse(is.na(m), "NULL", m)
