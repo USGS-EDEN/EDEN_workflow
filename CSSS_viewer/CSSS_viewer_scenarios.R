@@ -2,7 +2,7 @@ library (ncdf4)
 try (setwd("./CSSS_viewer"), silent = T)
 
 fls <- list.files("./input/", "^depth_")
-sc <- c("ALTHR", "WECB", "WFWO")
+sc <- c("AA", "BB", "CC", "DD", "ECBr", "EE1", "EE2", "NA25")
 s.nc <- nc_open(paste0("./input/", fls[1]))
 x <- ncvar_get(s.nc, "x")
 y <- ncvar_get(s.nc, "y")
@@ -99,20 +99,20 @@ for (i in 1:length(fls)) {
   for (j in 1:length(time)) {
     if (!dir.exists(paste0("./images/", format(time[j], '%Y'), "_", sc[i]))) dir.create(paste0("./images/", format(time[j], '%Y'), "_", sc[i]))
     s <- ncvar_get(s.nc, "depth", c(1, 1, t[j] + 1), c(-1, -1, 1))
-    s <- s[, 477:1] / 10
+    s <- s[, 358:1] / 10
     f <- paste0(sprintf("trans%04d", as.POSIXlt(time[j])$yday), ".png")
     png(paste0("./images/", format(time[j], '%Y'), "_", sc[i], "/", f), width = 754, height = 1015, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
     image(x, y2, s, col = col, breaks = c(0, 17, 30, 46, 600), axes = F, asp = 1)
-    text(x[58], y2[47], time[j], pos = 4)
-    # points(x[c(58, 58, 344, 344)], y2[c(38, 442, 38, 442)], pch = 16) #positioning markers for Leaflet map
+    text(x[18], y2[37], time[j], pos = 4)
+    # points(x[c(1, 1, 262, 262)], y2[c(1, 358, 1, 358)], pch = 16) #positioning markers for Leaflet map
     dev.off()
   }
   nc_close(s.nc)
 }
 
 # Calc subarea annual stats
-year <- data.frame(year = 1965:2005)
+year <- data.frame(year = 1965:2016)
 start_nest <- which(as.POSIXlt(time)$mon == 2 & as.POSIXlt(time)$mday == 1)
 end_nest<-which(as.POSIXlt(time)$mon == 6 & as.POSIXlt(time)$mday == 15)
 start_year <- which(as.POSIXlt(time)$yday == 0)
@@ -184,19 +184,19 @@ for (m in 1:length(fls)) {
     if (!dir.exists(paste0("./images/hydrop_", sc[m]))) dir.create(paste0("./images/hydrop_", sc[m]))
     png(paste0("./images/hydrop_", sc[m], "/four_year_hydroperiod_", year$year[i] + 4, "_", sc[m], ".png"), width = 754, height = 1015, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
-    image(x, y2, h4[, 477:1, i], col = col, breaks = c(0, 138.2, 163, 200.3, 220.3, 400), axes = F, asp = 1)
+    image(x, y2, h4[, 358:1, i], col = col, breaks = c(0, 138.2, 163, 200.3, 220.3, 400), axes = F, asp = 1)
     text(x[58], y2[47], year$year[i] + 4, pos = 4)
     dev.off()
     png(paste0("./images/hydrop_", sc[m], "/four_year_hydroperiod_", year$year[i] + 4, "_mask65_", sc[m], ".png"), width = 754, height = 1015, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
-    image(x, y2, h4[, 477:1, i], col = col, breaks = c(0, 138.2, 163, 200.3, 220.3, 400), axes = F, asp = 1)
+    image(x, y2, h4[, 358:1, i], col = col, breaks = c(0, 138.2, 163, 200.3, 220.3, 400), axes = F, asp = 1)
     mask <- ifelse(sd >= 56.8, 1, NA)
-    image(x, y2, mask[, 477:1], col = rgb(0, 0, 0, 0.65), add = T)
+    image(x, y2, mask[, 358:1], col = rgb(0, 0, 0, 0.65), add = T)
     text(x[58], y2[47], year$year[i] + 4, pos = 4)
     dev.off()
     png(paste0("./images/hydrop_", sc[m], "/four_year_hydroperiod_", year$year[i] + 4, "_sd_", sc[m], ".png"), width = 754, height = 1015, bg = "transparent", type = "quartz")
     par(mar = c(0, 0, 0, 0))
-    image(x, y2, sd[, 477:1], col = rev(col), breaks = c(-1, 26.7, 33.7, 46.7, 56.8, 400), axes = F, asp = 1)
+    image(x, y2, sd[, 358:1], col = rev(col), breaks = c(-1, 26.7, 33.7, 46.7, 56.8, 400), axes = F, asp = 1)
     text(x[58], y2[47], year$year[i] + 4, pos = 4)
     dev.off()
   }
@@ -280,23 +280,34 @@ for (a in 1:length(fls)) {
   fl <- paste0("./output/perdry_sum_", sc[a], "_html.txt")
   yr <- year[, c(1, (2:73) + (a - 1) * 72)]
   yr <- yr[, c(1, 10:17, 2:9, 18:73)]
+  avg <- round(colMeans(yr, na.rm = T), 1)
+  yr[, grep("four_hyd", names(yr))] <- round(yr[, grep("four_hyd", names(yr))])
+  for (i in 1:length(yr$year)) {
+    yr[i, grep("nest|year[029]|four_hyd_per", names(yr))] <- paste0(yr[i, grep("nest|year[029]|four_hyd_per", names(yr))], "%")
+    yr[i, grep("four_hyd_mean|four_hyd_sd", names(yr))] <- paste(yr[i, grep("four_hyd_mean|four_hyd_sd", names(yr))], "days")
+    yr[i, 2:dim(yr)[2]] <- paste0("<td>", yr[i, 2:dim(yr)[2]], "</td>")
+    yr[i, grep("nest40_A1|year0_to_89_A1|four_hyd_mean_A1", names(yr))] <- paste0('<?php if($int) echo "', yr[i, grep("nest40_A1|year0_to_89_A1|four_hyd_mean_A1", names(yr))])
+    yr[i, grep("nest90_A2|year211_A2|four_hyd_sd_A2", names(yr))] <- paste0(yr[i, grep("nest90_A2|year211_A2|four_hyd_sd_A2", names(yr))], '"; ?>')
+  }
+  avg[grep("four_hyd", names(avg))] <- round(avg[grep("four_hyd", names(avg))])
+  avg[grep("nest|year[029]|four_hyd_per", names(avg))] <- paste0(avg[grep("nest|year[029]|four_hyd_per", names(avg))], "%")
+  avg[grep("four_hyd_mean|four_hyd_sd", names(avg))] <- paste(avg[grep("four_hyd_mean|four_hyd_sd", names(avg))], "days")
+  avg <- paste0("<td>", avg, "</td>")
+  names(avg) <- names(yr)
+  avg[grep("nest40_A1|year0_to_89_A1|four_hyd_mean_A1", names(avg))] <- paste0('<?php if($int) echo "', avg[grep("nest40_A1|year0_to_89_A1|four_hyd_mean_A1", names(avg))])
+  avg[grep("nest90_A2|year211_A2|four_hyd_sd_A2", names(avg))] <- paste0(avg[grep("nest90_A2|year211_A2|four_hyd_sd_A2", names(avg))], '"; ?>')
   write("", fl)
   for (i in 1:length(yr$year))
-    write(paste0("<tr><td bgcolor='#a0c1e7'>", yr$year[i], "</td><td bgcolor='white'>", paste(yr[i, grep("nest", names(yr))], collapse = "%</td><td bgcolor='white'>"), "%</td></tr>"), fl, append = T)
+    write(paste0("\t\t\t<tr><td style='background-color:#a0c1e7'>", yr$year[i], "</td>", paste(yr[i, grep("nest", names(yr))], collapse=""), "</tr>"), fl, append = T)
+  write(paste0("\t\t\t<tr style='font-weight:bold'><td style='background-color:#a0c1e7'>Avg.</td>", paste(avg[grep("nest", names(avg))], collapse = ""), "</tr>"), fl, append = T)
   write("\n", fl, append = T)
   for (i in 1:length(yr$year))
-    write(paste0("<tr><td bgcolor='#a0c1e7'>", yr$year[i], "</td><td bgcolor='white'>", paste(yr[i, grep("year[029]", names(yr))], collapse = "%</td><td bgcolor='white'>"), "%</td></tr>"), fl, append = T)
+    write(paste0("\t\t\t<tr><td style='background-color:#a0c1e7'>", yr$year[i], "</td>", paste(yr[i, grep("year[029]", names(yr))], collapse = ""), "</tr>"), fl, append = T)
+  write(paste0("\t\t\t<tr style='font-weight:bold'><td style='background-color:#a0c1e7'>Avg.</td>", paste(avg[grep("year[029]", names(avg))], collapse = ""), "</tr>"), fl, append = T)
   write("\n", fl, append = T)
   yr$year <- yr$year + 1
-  # swap % for days where appropriate
   for (i in 4:length(yr$year))
-    write(paste0("<tr><td bgcolor='#a0c1e7'>", yr$year[i], "</td><td bgcolor='white'>", paste(round(yr[i, grep("four_hyd", names(yr))]), collapse = " days</td><td bgcolor='white'>"), " days</td></tr>"), fl, append = T)
-  fl2 <- paste0("./output/perdry_sum_", sc[a], "_html_avgs.txt")
-  avg <- round(colMeans(yr, na.rm = T), 1)
-  write(paste0("<tr><td bgcolor='#a0c1e7'><strong>Avg.</strong></td><td bgcolor='white'><strong>", paste(avg[grep("nest", names(avg))], collapse = "%</strong></td><td bgcolor='white'><strong>"), "%</strong></td></tr>"), fl2)
-  write("\n", fl2, append = T)
-  write(paste0("<tr><td bgcolor='#a0c1e7'><strong>Avg.</strong></td><td bgcolor='white'><strong>", paste(avg[grep("year[029]", names(avg))], collapse = "%</strong></td><td bgcolor='white'><strong>"), "%</strong></td></tr>"), fl2, append = T)
-  write("\n", fl2, append = T)
-  write(paste0("<tr><td bgcolor='#a0c1e7'><strong>Avg.</strong></td><td bgcolor='white'><strong>", paste(round(avg[grep("four_hyd", names(avg))]), collapse = " days</strong></td><td bgcolor='white'><strong>"), " days</strong></td></tr>"), fl2, append = T)
+    write(paste0("\t\t\t<tr><td style='background-color:#a0c1e7'>", yr$year[i], "</td>", paste(yr[i, grep("four_hyd", names(yr))], collapse = ""), "</tr>"), fl, append = T)
+  write(paste0("\t\t\t<tr style='font-weight:bold'><td style='background-color:#a0c1e7'>Avg.</td>", paste(avg[grep("four_hyd", names(avg))], collapse = ""), "</tr>"), fl, append = T)
 }
 setwd("..")

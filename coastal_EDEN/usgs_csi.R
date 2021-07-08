@@ -71,7 +71,7 @@ for (j in 1:dim(db)[1])
   query <- paste0(query, ", avg(`", db$COLUMN_NAME[j], "`) as `", db$COLUMN_NAME[j], "`")
 query <- paste(query, "from usgs_salinity group by Year, Month")
 sal <- dbGetQuery(con, query)
-r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 60) r <- c(r, i)
+r <- NULL; for (i in 1:dim(sal)[2]) if(length(which(!is.na(sal[,i]))) <= 62) r <- c(r, i)
 sal <- sal[, -r]
 csi <- CSIcalc(sal)
 for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {

@@ -110,6 +110,7 @@ for (i in 1:length(sub)) assign(paste0("dry_", sub[i]), ifelse(get(paste0("depth
 
 # Build statistics data.frame
 df <- data.frame(date = time)
+dr <- paste0("<table style='margin:0 auto;font-weight:bold'>\n<tr><td colspan='3'>For ", Sys.Date() - 1, "</td></tr>\n<tr><td>&nbsp;</td><td><a href='javascript:void(null)' onclick=\"showPos(event,'Cumulative number of days between March 1st and July 15th that each <abbr title=\\'Cape Sable seaside sparrow\\'>CSSS</abbr> subpopulation area is at least 40% dry.<br><br><span style=\\'font-size:10px\\'>Click to dismiss.</span>');\">&#8805;40% dry</a></td><td><a href='javascript:void(null)' onclick=\"showPos(event,'Discontinuous hydroperiod is the count of all days since January 1st of the year that each <abbr title=\\'Cape Sable seaside sparrow\\'>CSSS</abbr> subpopulation is &#8805;40% wet.<br><br><span style=\\'font-size:10px\\'>Click to dismiss.</span>');\">DHP</a></td></tr>\n")
 for (i in 1:length(sub)) {
   print(paste("Calculating stats for", sub[i]))
   dim <- sum(!is.na(get(paste0("grid_", sub[i])))) # number of cells in subarea
@@ -133,8 +134,10 @@ for (i in 1:length(sub)) {
     df[j, paste0("depth_mean_", sub[i])] <- round(mean(get(paste0("depth_", sub[i]))[, , j], na.rm = T), 1)
     df[j, paste0("depth_sd_", sub[i])] <- round(sd(get(paste0("depth_", sub[i]))[, , j], na.rm = T), 1)
   }
-  print(dry_cnt)
+  dr <- paste0(dr, "<tr><td>", sub[i], "</td><td>", dry_cnt, " days</td><td>", dhp_cnt, " days</td></tr>\n")
 }
+write(paste0(dr, "</table>\n"), "./output/dry_stats.html")
+err <- try (ftpUpload("./output/dry_stats.html", "ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/csss/dry_stats.html"))
 
 # Update existing stats .js
 err <- try (download.file("https://sofia.usgs.gov/eden/csss/por_stats.js", "./output/por_stats.js"))

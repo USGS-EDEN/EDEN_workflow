@@ -25,6 +25,7 @@ gages2$average_elevation <- NA
 gages <- rbind(gages, gages2)
 
 xx <- c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 365)
+lab <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NA)
 col <- c("black", "tan4", "tan2", "darkolivegreen4", "lightblue", "skyblue3", "darkgreen")
 file_HW <- "./input/mail_head-HW.txt"
 file_LW <- "./input/mail_head-LW.txt"
@@ -40,7 +41,6 @@ if (length(date_check) == 0) {
   lw <- paste0(lw, "<strong>Unavailable gage data from one or more cooperator agency for ", mdy, "; conditions at gages are not available.</strong>") 
 } else { 
   high_counter <- low_counter <- 0
-  lab <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", NA)
   for (j in 1:length(gages$station_name_web)) {
     st <- if (gages$station_name_web[j] == "3ANE_GW" | gages$station_name_web[j] == "3ANW_GW") substr(gages$station_name_web[j], 1, 4) else gages$station_name_web[j]
     query <- paste0("select date(datetime) as date, avg(`stage_", st, "`) + ", gages$conv[j], " as stage from stage where datetime >= 20020701000000 and datetime < 20121019000000 group by date")
@@ -66,6 +66,7 @@ if (length(date_check) == 0) {
     write(c(mdy, rev(yr$stage)[1]), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 2)
     write(t(cbind(qyear[xx, 1:3], median[xx], qyear[xx, 4:6])), paste0("./table/", gages$station_name_web[j], ".txt"), sep = "\t", ncolumns = 7, append = T)
     err <- try (ftpUpload(paste0("./table/", gages$station_name_web[j], ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/table/", gages$station_name_web[j], ".txt")))
+
     median[xx] <- NA
 
     jpeg(paste0("./images/", gages$station_name_web[j], "_monthly.jpg"), width = 1200, height = 800, quality = 100, type = "quartz")
@@ -120,17 +121,17 @@ if (length(date_check) == 0) {
     err <- try (ftpUpload(paste0("./images/", gages$station_name_web[j], "_monthly.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/thumbnails/", gages$station_name_web[j], "_monthly_thumb.jpg")))
   }
 }
-if(high_counter == 0) hw <- paste0(hw, "<strong>No gages equal or exceed the 90th percentile for the month on ", mdy, ".</strong>")
-if(low_counter == 0) lw <- paste0(lw, "<strong>No gages equal or are below the 25th percentile for the month on ", mdy, ".</strong>")
+if (high_counter == 0) hw <- paste0(hw, "<strong>No gages equal or exceed the 90th percentile for the month on ", mdy, ".</strong>")
+if (low_counter == 0) lw <- paste0(lw, "<strong>No gages equal or are below the 25th percentile for the month on ", mdy, ".</strong>")
 
 # Set up WL files
-cur_qtr <- paste0(as.POSIXlt(Sys.Date() - 1)$year + 1900, "_", tolower(quarters(Sys.Date() - 1)))
+cur_qtr <- paste0(as.POSIXlt(dt)$year + 1900, "_", tolower(quarters(dt)))
 err <- try (download.file(paste0("https://sofia.usgs.gov/eden/data/realtime2/", cur_qtr, "_v3rt_nc.zip"), paste0("../surfaces/", cur_qtr, ".zip")))
 unzip(paste0("../surfaces/", cur_qtr, ".zip"), exdir = "../surfaces")
 file.rename(paste0("../surfaces/", cur_qtr, "_v3rt.nc"), paste0("../surfaces/", cur_qtr, ".nc"))
 unlink("../surfaces/*.zip")
 
-yr <- as.POSIXlt(Sys.Date() - 1)$year + 1900
+yr <- as.POSIXlt(dt)$year + 1900
 qtr <- substr(cur_qtr, 7, 7)
 for (i in 2002:yr)
   for (j in 1:4)
@@ -146,7 +147,7 @@ high_counter <- 0
 low_counter <- 0
 err <- try (surf.nc <- nc_open(paste0("../surfaces/", rev(file_surf)[1])))
 fst_day <- as.Date(substr(surf.nc$dim$time$units, 12, 21))
-if (inherits(err, "try-error") | fst_day + rev(surf.nc$dim$time$vals)[1] != Sys.Date() - 1) {
+if (inherits(err, "try-error") | fst_day + rev(surf.nc$dim$time$vals)[1] != dt) {
   hw <- paste0(hw, "<strong>Unavailable gage data from one or more cooperator agency for ", mdy, "; real-time EDEN surfaces could not be generated, therefore conditions at tree islands are not available.</strong>")
   lw <- paste0(lw, "<strong>Unavailable gage data from one or more cooperator agency for ", mdy, "; real-time EDEN surfaces could not be generated, therefore conditions at tree islands are not available.</strong>")
 } else {
@@ -177,7 +178,12 @@ if (inherits(err, "try-error") | fst_day + rev(surf.nc$dim$time$vals)[1] != Sys.
       qyear[i, ] <- quantile(stage[as.POSIXlt(dt)$mon == as.numeric(format(as.Date(i - 1, "2018-01-01"), "%m")) - 1 & dt < as.Date("2012/10/19")], c(0, .1, .25, .75, .9, 1), na.rm = T)
       median[i, ] <- quantile(stage[as.POSIXlt(dt)$mon == as.numeric(format(as.Date(i - 1, "2018-01-01"), "%m")) - 1 & dt < as.Date("2012/10/19")], 0.5, na.rm = T)
     }
+    write(c(mdy, rev(stage)[1]), paste0("./table/", tree$island[j], ".txt"), sep = "\t", ncolumns = 2)
+    write(t(cbind(qyear[xx, 1:3], median[xx], qyear[xx, 4:6])), paste0("./table/", tree$island[j], ".txt"), sep = "\t", ncolumns = 7, append = T)
+    err <- try (ftpUpload(paste0("./table/", tree$island[j], ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/table/", tree$island[j], ".txt")))
+
     median[xx] <- NA
+
     if (rev(stage)[1] >= tree$elevation[j]) {
       hw <- paste0(hw, "<a href='http://sofia.usgs.gov/eden/water_level_percentiles.php?name=", tree$island[j], "&type=treeisland'>", tree$island[j], "</a> (overtopped)<br />\n")
       high_counter <- high_counter + 1
@@ -241,10 +247,6 @@ if (inherits(err, "try-error") | fst_day + rev(surf.nc$dim$time$vals)[1] != Sys.
     points(length(stage[as.POSIXlt(dt)$year + 1900 == yr]), rev(stage)[1], pch = 20)
     dev.off()
     err <- try (ftpUpload(paste0("./images/", tree$island[j], "_monthly_thumb.jpg"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/thumbnails/", tree$island[j], "_monthly_thumb.jpg")))
-    
-    write(c(mdy, rev(stage)[1]), paste0("./table/", tree$island[j], ".txt"), sep = "\t", ncolumns = 2)
-    write(t(cbind(qyear[xx, 1:3], median[xx], qyear[xx, 4:6])), paste0("./table/", tree$island[j], ".txt"), sep = "\t", ncolumns = 7, append = T)
-    err <- try (ftpUpload(paste0("./table/", tree$island[j], ".txt"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/ertp_hydrographs/table/", tree$island[j], ".txt")))
   }
 }
 if (high_counter == 0) hw <- paste0(hw, "<strong>No tree islands equal or exceed the maximum tree island ground elevation, or the 90th percentile water level for the month on ", mdy, ".</strong>")

@@ -26,7 +26,7 @@ for(i in 1:length(file_surf)) {
   time <- stage <- depth <- NULL
   
   # WL .nc's
-  surf.nc <- nc_open(paste0("./old_surfaces", "/", file_surf[i]))
+  surf.nc <- nc_open(paste0("./surfaces", "/", file_surf[i]))
 
   # Set up X and Y vectors
   if(i==1) { x <- ncvar_get(surf.nc, "x"); y <- ncvar_get(surf.nc, "y") }
@@ -40,7 +40,7 @@ for(i in 1:length(file_surf)) {
   nc_close(surf.nc)
 
   # Depth .nc's
-  surf.nc <- nc_open(paste0("./old_surfaces", "/", depth_surf[i]))
+  surf.nc <- nc_open(paste0("./surfaces", "/", depth_surf[i]))
   
   # Depth array
   depth <- ncvar_get(surf.nc, "depth")
@@ -103,16 +103,14 @@ for (j in 1:dim(gages)[1]) {
 }
 
 # Establish plotting ranges
-#r1 <- range(stage, na.rm = T)
-#r1[1] <- floor(r1[1])
-#r1[2] <- ceiling(r1[2])
-r1 <- c(-83, 506)
-#r2 <- range(depth, na.rm = T)
-#r2[1] <- floor(r2[1])
-#r2[2] <- ceiling(r2[2])
-r2 <- c(0, 266)
-#print(r1)
-#print(r2)
+r1 <- range(stage, na.rm = T)
+r1[1] <- floor(r1[1])
+r1[2] <- ceiling(r1[2])
+r2 <- range(depth, na.rm = T)
+r2[1] <- floor(r2[1])
+r2[2] <- ceiling(r2[2])
+print(r1)
+print(r2)
 
 # Plot WL and depth PNGs with 3cm contours
 for (j in 1:length(time)) {
