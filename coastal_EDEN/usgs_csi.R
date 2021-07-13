@@ -10,6 +10,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "
 all_gages <- read.csv("usgs_gages.csv", header = T, colClasses = "character")
 sd <- Sys.Date() - 90; ed <- Sys.Date() - 1
 tbl <- NULL
+report <- ""
 for (k in c("salinity", "temperature", "stage")) {
   gages <- switch (k, salinity = all_gages[all_gages$param == "00095" | all_gages$param == "00480", ], temperature = all_gages[all_gages$param == "00010", ], stage = all_gages[all_gages$param == "00065", ])
   for (i in 1:dim(gages)[1]) {
@@ -61,6 +62,7 @@ for (k in c("salinity", "temperature", "stage")) {
       q <- paste0(q, " where date = '", tbl$date[i], "'")
     dbSendQuery(con, q)
   }
+  report <- paste0(report, (dim(tbl)[2] - 1)/ 3, " USGS ", k, " gages loaded to EDENdb\n\n")
   tbl <- NULL
 }
 
@@ -87,6 +89,7 @@ for (l in dim(csi)[1]:(dim(csi)[1] - 100)) {
     query <- paste0(query, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, query)
 }
+report <- paste0(report, dim(csi)[3], " USGS CSI gages loaded to EDENdb\n\n")
 names(sal)[3:dim(sal)[2]] <- substr(names(sal)[3:dim(sal)[2]], 1, nchar(names(sal)[3:dim(sal)[2]]) - 9)
 for (i in 3:dim(sal)[2])
   sal[, i] <- ifelse(sal[, i] < 10, sprintf("%.1f", round(sal[, i], 1)), as.character(round(sal[, i])))
@@ -108,6 +111,7 @@ for (j in 1:dim(db)[1]) {
     CSIwrite(csi, "./csi")
     zip(paste0("./csi/", names(sal)[3], ".zip"), c(paste0("./csi/", names(sal)[3], ".csv"), "./metadata_CSI_data.txt"))
     err <- try (ftpUpload(paste0("./csi/", names(sal)[3], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_values/", names(sal)[3], ".zip"), .opts = list(forbid.reuse = 1)))
+    if (inherits(err, "try-error")) report <- paste0(report, names(sal)[3], " CSI data NOT transferred\n") else report <- paste0(report, "\n", names(sal)[3], " USGS CSI data transferred\n")
     CSIplot(csi, "./csi_plots", "bottom")
     for (i in 1:24)
       err <- try (ftpUpload(paste0("./csi_plots/", names(sal)[3], "_interval", i, ".png"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/usgs_csi/csi_plots/", names(sal)[3], "_interval", i, ".png"), .opts = list(forbid.reuse = 1)))
@@ -161,4 +165,8 @@ for (j in c(7, 14, 30, 60, 90)) {
   }
 }
 dbSendQuery(con, q2)
+### System level commands may not work if local environment does not have sendmail installed!!
+to <- "bmccloskey@usgs.gov,rsyoung@usgs.gov,mdpetkewich@usgs.gov,amedenblik@usgs.gov,bhuffman@usgs.gov"
+system(paste0("echo 'Subject: USGS CSI upload report
+", report, "' | /usr/sbin/sendmail ", to))
 setwd("..")

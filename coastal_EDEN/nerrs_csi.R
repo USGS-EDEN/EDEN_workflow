@@ -11,6 +11,7 @@ con <- dbConnect(MySQL(), user = usr, password = pword, dbname = "csi", host = "
 ga <- c("acespwq", "apaebwq", "cbmocwq", "cbmrrwq", "cbvtcwq", "delslwq", "gndbhwq", "gndblwq", "grblrwq", "grborwq", "grbsqwq", "gtmpcwq", "hudscwq", "hudtnwq", "hudtswq", "jacb6wq", "jacnewq", "job09wq", "job20wq", "marscwq", "nartbwq", "niwdcwq", "niwolwq", "nocrcwq", "noczbwq", "rkblhwq", "sapldwq", "welinwq", "welsmwq", "wkbfrwq", "wqbmhwq")
 # 10 days is the maximum full days before hitting 1000 record limit
 sd <- format(Sys.Date() - 10, "%Y%m%d"); ed <- format(Sys.Date() - 1, "%Y%m%d")
+report <- ""
 for (k in c("salinity", "temperature", "stage")) {
   for (i in ga) {
     print(paste(i, k))
@@ -37,6 +38,7 @@ for (k in c("salinity", "temperature", "stage")) {
         }
         dbSendQuery(con, q)
       }
+      report <- paste0(report, i, " NERRS ", k, " data loaded to EDENdb\n")
     }
   }
 }
@@ -63,6 +65,7 @@ for (l in 1:dim(csi)[1]) {
     q <- paste0(q, " where date = '", rownames(csi)[l], "-01'")
   dbSendQuery(con, q)
 }
+report <- paste0(report, "\n", dim(csi)[3], " NERRS CSI gages loaded to EDENdb\n\n")
 names(sal)[3:dim(sal)[2]] <- substr(names(sal)[3:dim(sal)[2]], 1, nchar(names(sal)[3:dim(sal)[2]]) - 9)
 for (i in 3:dim(sal)[2])
   sal[, i] <- ifelse(sal[, i] < 10, sprintf("%.1f", round(sal[, i], 1)), as.character(round(sal[, i])))
@@ -85,6 +88,7 @@ for (j in 2:dim(db)[1]) {
   CSIwrite(csi, "./csi")
   zip(paste0("./csi/", names(sal)[3], ".zip"), c(paste0("./csi/", names(sal)[3], ".csv"), "./metadata_CSI_data.txt"))
   err <- try (ftpUpload(paste0("./csi/", names(sal)[3], ".zip"), paste0("ftp://ftpint.usgs.gov/pub/er/fl/st.petersburg/eden/nerrs_csi/csi_values/", names(sal)[3], ".zip"), .opts = list(forbid.reuse = 1)))
+  if (inherits(err, "try-error")) report <- paste0(report, names(sal)[3], " CSI data NOT transferred\n") else report <- paste0(report, "\n", names(sal)[3], " CSI data transferred\n")
 }
 
 #t <- "create table nerrs_stage_per (date date NOT NULL primary key"
@@ -130,4 +134,8 @@ for (j in c(7, 14, 30, 60, 90)) {
   }
 }
 dbSendQuery(con, q2)
+### System level commands may not work if local environment does not have sendmail installed!!
+to <- "bmccloskey@usgs.gov,rsyoung@usgs.gov,mdpetkewich@usgs.gov,amedenblik@usgs.gov,bhuffman@usgs.gov"
+system(paste0("echo 'Subject: NERRS CSI upload report
+", report, "' | /usr/sbin/sendmail ", to))
 setwd("..")
